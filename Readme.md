@@ -57,8 +57,6 @@ Install the following libraries in **Arduino IDE**:
 | 3.3V      | VCC      | VCC      |
 | GND       | GND      | GND      |
 | GPIO15    | DATA     | -        |
-| GPIO21    | -        | SDA      |
-| GPIO22    | -        | SCL      |
 
 ## Configuration
 
