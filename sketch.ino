@@ -9,7 +9,7 @@
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET    -1
+#define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 Adafruit_BMP085 bmp;
 
@@ -18,6 +18,8 @@ Adafruit_BMP085 bmp;
 bool oledOn = true;
 unsigned long lastDebounceTime = 0;
 const unsigned long debounceDelay = 200;
+unsigned long oledTimer = 0;
+const unsigned long oledTimeout = 300000;  // 5 minutes (300,000 ms)
 
 // MQTT topic
 const char* topic = "Sensors/BMP180/01";
@@ -117,6 +119,8 @@ void setup() {
     reconnectMQTT();
 
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+
+    oledTimer = millis();  // Start the OLED timer
 }
 
 void loop() {
@@ -134,7 +138,9 @@ void loop() {
             oledOn = !oledOn;
             Serial.printf("📟 OLED %s\n", oledOn ? "ON" : "OFF");
 
-            if (!oledOn) {
+            if (oledOn) {
+                oledTimer = millis();  // Reset OLED timer when turned on
+            } else {
                 display.clearDisplay();
                 display.display();
             }
@@ -143,13 +149,24 @@ void loop() {
         buttonPressed = false;
     }
 
+    // **Auto Shutoff OLED After 5 Minutes**
+    if (oledOn && (millis() - oledTimer >= oledTimeout)) {
+        oledOn = false;
+        Serial.println("⏳ OLED turned off automatically after 5 minutes.");
+        display.clearDisplay();
+        display.display();
+    }
+
     // **Temperature, Altitude, and Pressure Readings**
     float temperatureC = bmp.readTemperature();
     float temperatureF = (temperatureC * 1.8) + 32;  
-    float pressure = round(bmp.readPressure() / 100.0);
+    const float PRESSURE_CALIBRATION_OFFSET = -2.92; // Adjust based on your reference
+    float pressure = round((bmp.readPressure() / 100.0) + PRESSURE_CALIBRATION_OFFSET);
+
 
     // **Fix Altitude Readings**
-    float altitudeM = bmp.readAltitude();
+    const float ALTITUDE_CALIBRATION_OFFSET = 34.4; // Adjust this based on your reference
+    float altitudeM = bmp.readAltitude() + ALTITUDE_CALIBRATION_OFFSET;
     float smoothedAltitudeM = getSmoothedAltitude(altitudeM);
     float smoothedAltitudeF = smoothedAltitudeM * 3.28084;
 
@@ -186,7 +203,7 @@ void loop() {
         lastSerialPrintTime = millis();
     }
 
-    // **OLED Display (Timestamp Restored)**
+    // **OLED Display (Auto Shutoff Integrated)**
     if (oledOn) {
         display.clearDisplay();
         display.setTextColor(WHITE);
