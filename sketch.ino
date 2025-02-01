@@ -1,29 +1,26 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include <DHT.h>
-#include <time.h>
+#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Adafruit_BMP085.h>
+#include <time.h>
 #include "secrets.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET    -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+Adafruit_BMP085 bmp;
 
 // Button Configuration
 #define BUTTON_PIN 0  // ESP32 Built-in button (NOT the reset button)
-bool oledOn = true;  // Track OLED state
+bool oledOn = true;
 unsigned long lastDebounceTime = 0;
-const unsigned long debounceDelay = 200;  // 200ms debounce
+const unsigned long debounceDelay = 200;
 
 // MQTT topic
-const char* topic = "Sensors/DHT11/01";
-
-// DHT Sensor Setup
-#define DHTPIN 15
-#define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
+const char* topic = "Sensors/BMP180/01";
 
 // Wi-Fi and MQTT Clients
 WiFiClient espClient;
@@ -31,14 +28,13 @@ PubSubClient client(espClient);
 
 // Time Configuration
 const char* ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = -8 * 3600; // Pacific Standard Time (PST)
-const int daylightOffset_sec = 0;     // No DST
+const long gmtOffset_sec = -8 * 3600;
+const int daylightOffset_sec = 0;
 
 unsigned long lastMQTTSentTime = 0;
-const unsigned long mqttInterval = 300000; // 5 minutes in milliseconds
-
+const unsigned long mqttInterval = 300000; // 5 minutes
 unsigned long lastSerialPrintTime = 0;
-const unsigned long serialInterval = 15000; // **15 seconds in milliseconds**
+const unsigned long serialInterval = 15000; // 15 seconds
 
 void reconnectMQTT() {
     while (!client.connected()) {
@@ -75,7 +71,12 @@ void setup() {
     delay(2000);
     Serial.println("\n🚀 ESP32 is starting up...");
 
-    pinMode(BUTTON_PIN, INPUT_PULLUP); // Set button as input with pull-up resistor
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    if (!bmp.begin()) {
+        Serial.println("❌ BMP180 sensor not found!");
+        while (1);
+    }
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
         Serial.println("SSD1306 allocation failed");
@@ -84,7 +85,7 @@ void setup() {
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
-    display.setRotation(2); // Flip screen 180 degrees
+    display.setRotation(2);
 
     // Connect to Wi-Fi
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -99,9 +100,6 @@ void setup() {
     client.setServer(MQTT_SERVER, 1883);
     reconnectMQTT();
 
-    // Initialize the DHT Sensor
-    dht.begin();
-
     // Configure and synchronize time
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     waitForTimeSync();
@@ -114,31 +112,33 @@ void loop() {
     }
     client.loop();
 
-    // Handle button press
+    // Handle OLED button toggle
     static bool buttonPressed = false;
-    if (digitalRead(BUTTON_PIN) == LOW) { // Button is pressed
+    if (digitalRead(BUTTON_PIN) == LOW) {
         if (!buttonPressed && (millis() - lastDebounceTime > debounceDelay)) {
             buttonPressed = true;
             lastDebounceTime = millis();
-            oledOn = !oledOn;  // Toggle OLED state
+            oledOn = !oledOn;
             Serial.printf("📟 OLED %s\n", oledOn ? "ON" : "OFF");
 
             if (!oledOn) {
                 display.clearDisplay();
-                display.display();  // Turn OLED off
+                display.display();
             }
         }
     } else {
         buttonPressed = false;
     }
 
-    // Read temperature and humidity
-    float humidity = dht.readHumidity();
-    float temperatureC = dht.readTemperature();
+    // Read temperature, altitude, and pressure
+    float temperatureC = bmp.readTemperature();
     float temperatureF = (temperatureC * 1.8) + 32;
+    float pressure = bmp.readPressure() / 100.0; // Convert Pa to hPa
+    float altitudeM = bmp.readAltitude(); // Get altitude in meters
+    float altitudeF = altitudeM * 3.28084; // Convert altitude to feet
 
-    if (isnan(humidity) || isnan(temperatureC)) {
-        Serial.println("⚠️ Failed to read from DHT sensor!");
+    if (isnan(temperatureC) || isnan(pressure) || isnan(altitudeM)) {
+        Serial.println("⚠️ Failed to read from BMP180 sensor!");
         return;
     }
 
@@ -148,19 +148,19 @@ void loop() {
         struct tm timeinfo;
         localtime_r(&now, &timeinfo);
         
-        char timeStr[50];  // Corrected buffer size
+        char timeStr[50];
         strftime(timeStr, sizeof(timeStr), "%m/%d/%y %I:%M%p PST", &timeinfo);
 
-        Serial.printf("%s | Humidity: %.2f %% | Temperature: %.2f °C | %.2f °F\n",
-                      timeStr, humidity, temperatureC, temperatureF);
+        Serial.printf("%s | Temp: %.2f C / %.2f F | Alt: %.2f m / %.0f ft | Pressure: %.2f hPa\n",
+                      timeStr, temperatureC, temperatureF, altitudeM, altitudeF, pressure);
         lastSerialPrintTime = millis();
     }
 
     // Send MQTT message every 5 minutes
     if (millis() - lastMQTTSentTime >= mqttInterval) {
         char message[100];
-        snprintf(message, sizeof(message), "Humidity: %.2f %% | Temp: %.2f °C | %.2f °F",
-                 humidity, temperatureC, temperatureF);
+        snprintf(message, sizeof(message), "Temp: %.2f C / %.2f F | Alt: %.2f m / %.0f ft | Pressure: %.2f hPa",
+                 temperatureC, temperatureF, altitudeM, altitudeF, pressure);
         client.publish(topic, message, true);
         lastMQTTSentTime = millis();
     }
@@ -170,18 +170,28 @@ void loop() {
         display.clearDisplay();
         display.setTextColor(WHITE);
         
-        // Display Sensor Data
+        // Display Temperature First
         display.setTextSize(1);
         display.setCursor(0, 0);
-        display.println("Humidity:");
-        display.setCursor(10, 10);
-        display.println(String(humidity, 1) + " %");
+        display.print("Temp: ");
+        display.print(temperatureC, 1);
+        display.print(" C / ");
+        display.print(temperatureF, 1);
+        display.println(" F");
+
+        // Display Altitude Next
+        display.setCursor(0, 10);
+        display.print("Alt: ");
+        display.print(altitudeM, 1);
+        display.print(" m / ");
+        display.print(altitudeF, 0);
+        display.println(" ft");
+
+        // Display Pressure Last
         display.setCursor(0, 20);
-        display.println("Temperature:");
-        display.setCursor(10, 30);
-        display.println(String(temperatureC, 1) + " C");
-        display.setCursor(10, 40);
-        display.println(String(temperatureF, 1) + " F");
+        display.print("Pressure: ");
+        display.print(pressure, 1);
+        display.println(" hPa");
 
         // Display Time
         time_t now = time(nullptr);
