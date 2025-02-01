@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project utilizes an **ESP32**, a **BMP180 temperature, pressure & altitude sensor**, and an **SSD1306 OLED display** to collect and display environmental data. The data is also published to an **MQTT broker** every **5 minutes** for remote monitoring.
+This project utilizes an **ESP32**, a **BMP180 temperature, pressure & altitude sensor**, and an **SSD1306 OLED display** to collect and display environmental data. The data is also published to an **MQTT broker** every **5 minutes** for remote monitoring. Now, **MQTT Auto Discovery** is implemented for seamless integration with **Home Assistant**.
 
 ## Features
 
@@ -10,6 +10,7 @@ This project utilizes an **ESP32**, a **BMP180 temperature, pressure & altitude 
 - **OLED Display** shows real-time data
 - **Wi-Fi Connectivity** for NTP time synchronization
 - **MQTT Data Publishing** every **5 minutes**, with a timestamp
+- **MQTT Auto Discovery** for **Home Assistant Integration**
 - **OLED Displays "MQTT Sent!" for 5 seconds when an MQTT message is published**
 - **OLED Toggle** via a physical button
 - **Smoothed Altitude Measurements** using a moving average filter
@@ -33,6 +34,7 @@ Ensure you have the following libraries installed in **Arduino IDE**:
 3. **Adafruit BMP085 Library** (by Adafruit, supports BMP180)
 4. **Adafruit GFX Library** (by Adafruit)
 5. **Adafruit SSD1306** (by Adafruit)
+6. **ArduinoJson** (for MQTT payload formatting)
 
 ### Installing Libraries
 
@@ -125,6 +127,20 @@ Before uploading the code, create a `secrets.h` file alongside your `.ino` file 
 5. Click **Upload**
 6. Open the **Serial Monitor** (baud rate: `19200`) to check the logs
 
+## MQTT Auto Discovery (Home Assistant Integration)
+
+This ESP32 firmware now **automatically sets up sensors in Home Assistant** via MQTT Auto Discovery.
+
+### Topics Used:
+
+| Sensor          | State Topic | Discovery Topic |
+|----------------|---------------------------|--------------------------------|
+| Temperature (°F) | `homeassistant/sensor/esp32_temperature_F/state` | `homeassistant/sensor/esp32_temperature_F/config` |
+| Altitude (ft)   | `homeassistant/sensor/esp32_altitude/state` | `homeassistant/sensor/esp32_altitude/config` |
+| Pressure (hPa)  | `homeassistant/sensor/esp32_pressure/state` | `homeassistant/sensor/esp32_pressure/config` |
+
+If Home Assistant restarts, the ESP32 resends discovery topics when it detects HA is back online.
+
 ## MQTT Data Format
 
 The ESP32 publishes the following message to the MQTT topic **every 5 minutes**:
@@ -167,7 +183,6 @@ MQTT Sent!
 ## Future Improvements
 
 - Implement **deep sleep** to save power
-- Create Branch for adding to Meshtastic board to send sensor data for MQTT over Lora
 - Add support for **more sensors (BME280, BME680, etc.)**
 
 ---
