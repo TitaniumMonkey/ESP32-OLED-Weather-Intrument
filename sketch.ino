@@ -34,7 +34,6 @@ const long gmtOffset_sec = -8 * 3600;
 const int daylightOffset_sec = 0;
 
 unsigned long lastMQTTSentTime = 0;
-const unsigned long mqttInterval = 300000;
 unsigned long lastSerialPrintTime = 0;
 const unsigned long serialInterval = 15000;
 
@@ -124,12 +123,14 @@ void setup() {
 }
 
 void loop() {
+    // Ensure MQTT connection is maintained
     if (!client.connected()) {
         Serial.println("MQTT disconnected. Reconnecting...");
         reconnectMQTT();
     }
     client.loop();
 
+    // Handle button press for OLED toggle
     static bool buttonPressed = false;
     if (digitalRead(BUTTON_PIN) == LOW) {
         if (!buttonPressed && (millis() - lastDebounceTime > debounceDelay)) {
@@ -163,11 +164,10 @@ void loop() {
     const float PRESSURE_CALIBRATION_OFFSET = -2.92; // Adjust based on your reference
     float pressure = round((bmp.readPressure() / 100.0) + PRESSURE_CALIBRATION_OFFSET);
 
-
     // **Fix Altitude Readings**
-    const float ALTITUDE_CALIBRATION_OFFSET = 34.4; // Adjust this based on your reference
+    const float ALTITUDE_CALIBRATION_OFFSET = 30.0; // Adjust this based on your reference
     float altitudeM = bmp.readAltitude() + ALTITUDE_CALIBRATION_OFFSET;
-    float smoothedAltitudeM = getSmoothedAltitude(altitudeM);
+    float smoothedAltitudeM = round(getSmoothedAltitude(altitudeM));  // Now rounded (no decimals)
     float smoothedAltitudeF = smoothedAltitudeM * 3.28084;
 
     // **Averaging Altitude & Pressure**
@@ -189,21 +189,38 @@ void loop() {
         lastAvgUpdateTime = millis();
     }
 
+    // **Get Current Time as String**
+    time_t now = time(nullptr);
+    struct tm timeinfo;
+    localtime_r(&now, &timeinfo);
+
+    char timeStr[50];
+    strftime(timeStr, sizeof(timeStr), "%m/%d/%y %I:%M%p PST", &timeinfo);
+
+    // **Send MQTT message every 5 minutes with timestamp**
+    static unsigned long mqttSentDisplayTime = 0;
+    if (millis() - lastMQTTSentTime >= 300000) {  // 5 Minute delay
+        char message[150];
+        snprintf(message, sizeof(message), "%s | Temp: %.2f C / %.2f F | Alt: %.0f m / %.0f ft | Pressure: %.0f hPa",
+                 timeStr, temperatureC, temperatureF, smoothedAltitudeM, smoothedAltitudeF, pressure);
+        client.publish(topic, message, true);
+        
+        Serial.println("📡 MQTT message sent!");
+
+        // Display "MQTT Sent!" for 5 seconds
+        mqttSentDisplayTime = millis();
+        
+        lastMQTTSentTime = millis();
+    }
+
     // **Serial Output**
     if (millis() - lastSerialPrintTime >= serialInterval) {
-        time_t now = time(nullptr);
-        struct tm timeinfo;
-        localtime_r(&now, &timeinfo);
-        
-        char timeStr[50];
-        strftime(timeStr, sizeof(timeStr), "%m/%d/%y %I:%M%p PST", &timeinfo);
-
-        Serial.printf("%s | Temp: %.2f C / %.2f F | Alt: %.1f m / %.0f ft | Pressure: %.0f hPa\n",
+        Serial.printf("%s | Temp: %.2f C / %.2f F | Alt: %.0f m / %.0f ft | Pressure: %.0f hPa\n",
                       timeStr, temperatureC, temperatureF, smoothedAltitudeM, smoothedAltitudeF, pressure);
         lastSerialPrintTime = millis();
     }
 
-    // **OLED Display (Auto Shutoff Integrated)**
+    // **OLED Display Update (Auto Shutoff Integrated)**
     if (oledOn) {
         display.clearDisplay();
         display.setTextColor(WHITE);
@@ -211,15 +228,16 @@ void loop() {
         display.setCursor(0, 0);
         display.printf("Temp: %.1f C / %.1f F\n", temperatureC, temperatureF);
         display.setCursor(0, 10);
-        display.printf("Alt: %.1f m / %.0f ft\n", avgAltitudeOLED, avgAltitudeOLED * 3.28084);
+        display.printf("Alt: %.0f m / %.0f ft\n", avgAltitudeOLED, avgAltitudeOLED * 3.28084);
         display.setCursor(0, 20);
         display.printf("Pressure: %.0f hPa\n", avgPressureOLED);
+        display.setCursor(0, 30);
 
-        time_t now = time(nullptr);
-        struct tm timeinfo;
-        localtime_r(&now, &timeinfo);
-        char timeStr[50];
-        strftime(timeStr, sizeof(timeStr), "%m/%d/%y %I:%M%p PST", &timeinfo);
+        // Display "MQTT Sent!" for 5 seconds
+        if (millis() - mqttSentDisplayTime <= 5000) {
+            display.setCursor(0, 40);  // Set position for the message
+            display.println("MQTT Sent!");
+        }
 
         display.setCursor(0, 54);
         display.println(timeStr);
