@@ -10,6 +10,7 @@ This project uses an **ESP32**, a **DHT11 temperature & humidity sensor**, and a
 - Displays a confirmation message when MQTT data is sent
 - Uses **Wi-Fi** to connect to the network and syncs time via **NTP**
 - **Flips the display** to match the ESP32 OLED module's default layout
+- Allows **manual OLED toggling** using the ESP32 **built-in button**
 
 ## Components Used
 | Component             | Description                   |
@@ -52,11 +53,11 @@ Install the following libraries in **Arduino IDE**:
    - Partition Scheme: **Default**
 
 ## Wiring Diagram
-| ESP32 Pin | DHT11 Pin | OLED Pin |
-|-----------|----------|----------|
-| 3.3V      | VCC      | VCC      |
-| GND       | GND      | GND      |
-| GPIO15    | DATA     | -        |
+| ESP32 Pin | DHT11 Pin |
+|-----------|----------|
+| 3.3V      | VCC      |
+| GND       | GND      |
+| GPIO15    | DATA     |
 
 ## Configuration
 
@@ -81,6 +82,7 @@ To get your **GMT offset**, you can check:
 #### Adjusting for DST
 - If your region **uses DST**, change `daylightOffset_sec` to `3600` (1 hour forward).
 - If your region **does not use DST**, keep it as `0`.
+
 Before uploading the code, create a `secrets.h` file next to your `.ino` file with your **Wi-Fi and MQTT credentials**:
 
 ```cpp
