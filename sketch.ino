@@ -4,6 +4,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_BMP085.h>
+#include <ArduinoJson.h>
 #include <time.h>
 #include "secrets.h"
 
@@ -21,8 +22,15 @@ const unsigned long debounceDelay = 200;
 unsigned long oledTimer = 0;
 const unsigned long oledTimeout = 300000;  // 5 minutes (300,000 ms)
 
-// MQTT topic
-const char* topic = "Sensors/BMP180/01";
+// MQTT State Topics (Only 3)
+const char* topic_state_temp_F = "homeassistant/sensor/esp32_temperature_F/state";
+const char* topic_state_altitude = "homeassistant/sensor/esp32_altitude/state";
+const char* topic_state_pressure = "homeassistant/sensor/esp32_pressure/state";
+
+// MQTT Discovery Topics (Only 3)
+const char* topic_discovery_temp_F = "homeassistant/sensor/esp32_temperature_F/config";
+const char* topic_discovery_altitude = "homeassistant/sensor/esp32_altitude/config";
+const char* topic_discovery_pressure = "homeassistant/sensor/esp32_pressure/config";
 
 // Wi-Fi and MQTT Clients
 WiFiClient espClient;
@@ -78,6 +86,58 @@ void reconnectMQTT() {
     while (!client.connected()) {
         if (client.connect("ESP32Weather", MQTT_USER, MQTT_PASS)) {
             Serial.println("✅ Connected to MQTT Broker!");
+
+            // Always trigger discovery on startup
+            bool discoveryNeeded = true;
+            client.subscribe("homeassistant/status");
+
+            client.setCallback([&discoveryNeeded](char* topic, byte* payload, unsigned int length) {
+                if (strcmp(topic, "homeassistant/status") == 0 && strncmp((char*)payload, "online", length) == 0) {
+                    Serial.println("✅ Home Assistant is online! Sending Auto Discovery.");
+                    discoveryNeeded = true;
+                }
+            });
+
+            client.loop();  // Process MQTT messages
+            delay(1000);    // Short delay to allow HA response
+
+            Serial.println("📡 Sending MQTT Auto Discovery...");
+
+            StaticJsonDocument<256> discoveryDoc;
+            char discoveryPayload[256];
+
+            // Temperature Sensor (Fahrenheit)
+            discoveryDoc.clear();
+            discoveryDoc["name"] = "ESP32 Temperature F";
+            discoveryDoc["state_topic"] = topic_state_temp_F;
+            discoveryDoc["unit_of_measurement"] = "°F";
+            discoveryDoc["device_class"] = "temperature";
+            discoveryDoc["value_template"] = "{{ value_json.temperature_F }}";
+            serializeJson(discoveryDoc, discoveryPayload);
+            client.publish(topic_discovery_temp_F, discoveryPayload, true);
+
+            // Altitude Sensor
+            discoveryDoc.clear();
+            discoveryDoc["name"] = "ESP32 Altitude";
+            discoveryDoc["state_topic"] = topic_state_altitude;
+            discoveryDoc["unit_of_measurement"] = "ft";
+            discoveryDoc["icon"] = "mdi:altimeter";
+            discoveryDoc["value_template"] = "{{ value_json.altitude }}";
+            discoveryDoc["retain"] = false;
+            serializeJson(discoveryDoc, discoveryPayload);
+            client.publish(topic_discovery_altitude, discoveryPayload, true);
+
+            // Pressure Sensor (hPa)
+            discoveryDoc.clear();
+            discoveryDoc["name"] = "ESP32 Pressure";
+            discoveryDoc["state_topic"] = topic_state_pressure;
+            discoveryDoc["unit_of_measurement"] = "hPa";
+            discoveryDoc["device_class"] = "pressure";
+            discoveryDoc["value_template"] = "{{ value_json.pressure_hPa }}";
+            serializeJson(discoveryDoc, discoveryPayload);
+            client.publish(topic_discovery_pressure, discoveryPayload, true);
+
+            Serial.println("✅ MQTT Discovery Sent for 3 Sensors!");
         } else {
             Serial.println("❌ Failed to connect to MQTT Broker! Retrying in 5 seconds...");
             delay(5000);
@@ -165,10 +225,10 @@ void loop() {
     float pressure = round((bmp.readPressure() / 100.0) + PRESSURE_CALIBRATION_OFFSET);
 
     // **Fix Altitude Readings**
-    const float ALTITUDE_CALIBRATION_OFFSET = 30.0; // Adjust this based on your reference
+    const float ALTITUDE_CALIBRATION_OFFSET = 25.5; // Adjust this based on your reference
     float altitudeM = bmp.readAltitude() + ALTITUDE_CALIBRATION_OFFSET;
     float smoothedAltitudeM = round(getSmoothedAltitude(altitudeM));  // Now rounded (no decimals)
-    float smoothedAltitudeF = smoothedAltitudeM * 3.28084;
+    float smoothedAltitudeF = round(smoothedAltitudeM * 3.28084);
 
     // **Averaging Altitude & Pressure**
     static unsigned long lastSampleTime = 0;
@@ -199,19 +259,45 @@ void loop() {
 
     // **Send MQTT message every 5 minutes with timestamp**
     static unsigned long mqttSentDisplayTime = 0;
-    if (millis() - lastMQTTSentTime >= 300000) {  // 5 Minute delay
-        char message[150];
-        snprintf(message, sizeof(message), "%s | Temp: %.2f C / %.2f F | Alt: %.0f m / %.0f ft | Pressure: %.0f hPa",
-                 timeStr, temperatureC, temperatureF, smoothedAltitudeM, smoothedAltitudeF, pressure);
-        client.publish(topic, message, true);
-        
-        Serial.println("📡 MQTT message sent!");
+    if (millis() - lastMQTTSentTime >= 60000) {  // 5 Minute delay
+      StaticJsonDocument<200> jsonDoc;
+      char mqttPayload[200];
 
-        // Display "MQTT Sent!" for 5 seconds
-        mqttSentDisplayTime = millis();
-        
-        lastMQTTSentTime = millis();
-    }
+      // Populate JSON document
+      jsonDoc["timestamp"] = timeStr;
+      jsonDoc["temperature_F"] = temperatureF;
+      jsonDoc["altitude"] = round(smoothedAltitudeF);  // Rounded to whole feet
+      jsonDoc["pressure_hPa"] = pressure;
+
+        // Publish Temperature in Fahrenheit
+        StaticJsonDocument<50> tempFDoc;
+        char tempFPayload[50];
+        tempFDoc["temperature_F"] = temperatureF;
+        serializeJson(tempFDoc, tempFPayload);
+        client.publish(topic_state_temp_F, tempFPayload, true);
+
+        // Publish Altitude (Rounded)
+        StaticJsonDocument<50> altitudeDoc;
+        char altitudePayload[50];
+        altitudeDoc["altitude"] = round(smoothedAltitudeF);
+        serializeJson(altitudeDoc, altitudePayload);
+        client.publish(topic_state_altitude, altitudePayload, true);
+
+
+        // Publish Pressure in hPa
+        StaticJsonDocument<50> pressureDoc;
+        char pressurePayload[50];
+        pressureDoc["pressure_hPa"] = pressure;
+        serializeJson(pressureDoc, pressurePayload);
+        client.publish(topic_state_pressure, pressurePayload, true);
+
+        Serial.println("📡 MQTT messages sent!");
+
+      // Display "MQTT Sent!" for 5 seconds
+      mqttSentDisplayTime = millis();
+    
+      lastMQTTSentTime = millis();
+}
 
     // **Serial Output**
     if (millis() - lastSerialPrintTime >= serialInterval) {
