@@ -13,6 +13,8 @@ This project utilizes an **ESP32**, a **BMP180 temperature, pressure & altitude 
 - **OLED Toggle** via a physical button
 - **Smoothed Altitude Measurements** using a moving average filter
 - **Automatic Reconnection to MQTT Broker**
+- **OLED Power Control** for energy saving
+- **Calibrated Altitude & Pressure Measurements** using offsets compared to more accurate sensors
 
 ## Components Used
 
@@ -142,11 +144,19 @@ Pressure: 995 hPa
 01/28/25 10:43PM PST
 ```
 
+## OLED Control
+
+A physical button connected to the ESP32 allows toggling the OLED display **on or off** to save power. If turned off, the display clears but the system continues logging data and publishing to MQTT.
+
+## Calibrated Altitude & Pressure Measurements
+
+- **Moving Average Filter**: The altitude is smoothed using a **5-sample moving average filter** to reduce fluctuations.
+- **Averaging for OLED**: Pressure and altitude values are averaged over **5 seconds** before being displayed to ensure consistent readings.
+
 ## Troubleshooting
 
 ### 1. **OLED Display Not Working**
 
-- Ensure **SDA (D21) & SCL (D22)** are correctly connected.
 - Check **I2C address** (default is `0x3C`).
 - Try scanning I2C devices using an I2C scanner sketch.
 
