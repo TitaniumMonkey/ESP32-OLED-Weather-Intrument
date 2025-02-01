@@ -9,12 +9,11 @@ This project utilizes an **ESP32**, a **BMP180 temperature, pressure & altitude 
 - **Temperature, Pressure & Altitude Monitoring** using a **BMP180 Sensor**
 - **OLED Display** shows real-time data
 - **Wi-Fi Connectivity** for NTP time synchronization
-- **MQTT Data Publishing** every **5 minutes**
+- **MQTT Data Publishing** every **5 minutes**, with a timestamp
+- **OLED Displays "MQTT Sent!" for 5 seconds when an MQTT message is published**
 - **OLED Toggle** via a physical button
 - **Smoothed Altitude Measurements** using a moving average filter
 - **Automatic Reconnection to MQTT Broker**
-- **OLED Power Control** for energy saving
-- **Calibrated Altitude & Pressure Measurements** using offsets compared to more accurate sensors
 
 ## Components Used
 
@@ -128,35 +127,29 @@ Before uploading the code, create a `secrets.h` file alongside your `.ino` file 
 
 ## MQTT Data Format
 
-The ESP32 publishes the following message to the MQTT topic:
+The ESP32 publishes the following message to the MQTT topic **every 5 minutes**:
 
 ```plaintext
-01/28/25 10:43PM PST | Temp: 18.2 C / 64.8 F | Alt: 50 m / 164 ft | Pressure: 995 hPa
+01/28/25 10:43PM PST | Temp: 18.2 C / 64.8 F | Alt: 380 m / 1247 ft | Pressure: 995 hPa
 ```
 
 ## OLED Display Layout
 
 ```
 Temp: 18.2 C / 64.8 F
-Alt: 50 m / 164 ft
+Alt: 380 m / 1247 ft
 Pressure: 995 hPa
+
+MQTT Sent!
 
 01/28/25 10:43PM PST
 ```
-
-## OLED Control
-
-A physical button connected to the ESP32 allows toggling the OLED display **on or off** to save power. If turned off, the display clears but the system continues logging data and publishing to MQTT.
-
-## Calibrated Altitude & Pressure Measurements
-
-- **Moving Average Filter**: The altitude is smoothed using a **5-sample moving average filter** to reduce fluctuations.
-- **Averaging for OLED**: Pressure and altitude values are averaged over **5 seconds** before being displayed to ensure consistent readings.
 
 ## Troubleshooting
 
 ### 1. **OLED Display Not Working**
 
+- Ensure **SDA (D21) & SCL (D22)** are correctly connected.
 - Check **I2C address** (default is `0x3C`).
 - Try scanning I2C devices using an I2C scanner sketch.
 
@@ -174,6 +167,7 @@ A physical button connected to the ESP32 allows toggling the OLED display **on o
 ## Future Improvements
 
 - Implement **deep sleep** to save power
+- Create Branch for adding to Meshtastic board to send sensor data for MQTT over Lora
 - Add support for **more sensors (BME280, BME680, etc.)**
 
 ---
