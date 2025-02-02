@@ -111,9 +111,12 @@ If the ESP32 fails to connect to Wi-Fi or MQTT, the error messages will indicate
 - Restart ESP32 after making changes to apply the new time settings.  
 
 ---
+
 ### **4️⃣ OLED Button Delay**
 
 - The button **does work**, but the OLED updates **only every 3 seconds**
 - If you press the button, **wait up to 3 seconds** before the screen reacts
+
+---
 
 🚀 **Your ESP32 Weather Station is now fully functional!** Enjoy real-time environmental data with MQTT & OLED integration! 🚀
