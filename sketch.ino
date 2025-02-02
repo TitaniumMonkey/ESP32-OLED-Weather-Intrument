@@ -376,48 +376,41 @@ if (millis() - lastSerialPrintTime >= serialInterval) {
                   timeStr, temperatureC, temperatureF, humidity, smoothedAltitudeM, smoothedAltitudeF, pressure);
 }
 
-    // **OLED Display Update (Auto Shutoff Integrated)**
-    if (oledOn) {
-        display.clearDisplay();
-        display.setTextColor(WHITE);
-        display.setTextSize(1);
+        // **OLED Display Update (Auto Shutoff Integrated)**
+        if (oledOn) {
+            display.clearDisplay();
+            display.setTextColor(WHITE);
+            display.setTextSize(1);
 
-        // Temperature
-        display.setCursor(0, 0);
-        display.printf("Temp: %.1f C / %.1f F\n", temperatureC, temperatureF);
+            // Temperature
+            display.setCursor(0, 0);
+            display.printf("Temp: %.1f C / %.1f F\n", temperatureC, temperatureF);
 
-        // Humidity
-        display.setCursor(0, 10);
-        display.printf("Humidity: %.1f%%\n", humidity);
+            // Humidity
+            display.setCursor(0, 10);
+            display.printf("Humidity: %.1f%%\n", humidity);
 
-        // Altitude
-        display.setCursor(0, 20);
-        display.printf("Alt: %.0f m / %.0f ft\n", avgAltitudeOLED, avgAltitudeOLED * 3.28084);
+            // Altitude
+            display.setCursor(0, 20);
+            display.printf("Alt: %.0f m / %.0f ft\n", avgAltitudeOLED, avgAltitudeOLED * 3.28084);
 
-        // Pressure
-        display.setCursor(0, 30);
-        display.printf("Pressure: %.0f hPa\n", avgPressureOLED);
+            // Pressure
+            display.setCursor(0, 30);
+            display.printf("Pressure: %.0f hPa\n", avgPressureOLED);
 
-        // Display "MQTT Sent!" for 5 seconds
-        if (millis() - mqttSentDisplayTime <= 5000) {
-            display.setCursor(0, 40);  
-            display.println("MQTT Sent!");
+            // Display "MQTT Sent!" for 5 seconds
+            if (millis() - mqttSentDisplayTime <= 5000) {
+                display.setCursor(0, 40);
+                display.println("MQTT Sent!");
+            }
+
+            // **Only Display Timestamp When OLED is On**
+            display.setCursor(0, 54);
+            display.println(timeStr);
+
+            display.display();  // ✅ Only updates when OLED is on
+        } else {
+            display.clearDisplay();  // ✅ Ensures display is cleared when OLED is off
+            display.display();       // ✅ Prevents lingering text (including date)
         }
-
-        // Time display (always at the bottom)
-        display.setCursor(0, 54);
-        display.println(timeStr);
-
-        display.display();
-    }
-
-        // Display "MQTT Sent!" for 5 seconds
-        if (millis() - mqttSentDisplayTime <= 5000) {
-            display.setCursor(0, 40);  // Set position for the message
-            display.println("MQTT Sent!");
-        }
-
-        display.setCursor(0, 54);
-        display.println(timeStr);
-        display.display();
-    }
+}
