@@ -23,12 +23,12 @@ unsigned long oledTimer = 0;
 const unsigned long oledTimeout = 300000;  // 5 minutes (300,000 ms)
 
 // MQTT State Topics (Only 3)
-const char* topic_state_temp_F = "homeassistant/sensor/esp32_temperature_F/state";
+const char* topic_state_temp = "homeassistant/sensor/esp32_temperature/state";
 const char* topic_state_altitude = "homeassistant/sensor/esp32_altitude/state";
 const char* topic_state_pressure = "homeassistant/sensor/esp32_pressure/state";
 
 // MQTT Discovery Topics (Only 3)
-const char* topic_discovery_temp_F = "homeassistant/sensor/esp32_temperature_F/config";
+const char* topic_discovery_temp = "homeassistant/sensor/esp32_temperature/config";
 const char* topic_discovery_altitude = "homeassistant/sensor/esp32_altitude/config";
 const char* topic_discovery_pressure = "homeassistant/sensor/esp32_pressure/config";
 
@@ -43,7 +43,7 @@ const int daylightOffset_sec = 0;
 
 unsigned long lastMQTTSentTime = 0;
 unsigned long lastSerialPrintTime = 0;
-const unsigned long serialInterval = 15000;
+const unsigned long serialInterval = 30000;
 
 // **Moving Average Filter for Altitude**
 #define ALTITUDE_SAMPLES 5
@@ -108,13 +108,13 @@ void reconnectMQTT() {
 
             // Temperature Sensor (Fahrenheit)
             discoveryDoc.clear();
-            discoveryDoc["name"] = "ESP32 Temperature F";
-            discoveryDoc["state_topic"] = topic_state_temp_F;
+            discoveryDoc["name"] = "ESP32 Temperature";
+            discoveryDoc["state_topic"] = topic_state_temp;
             discoveryDoc["unit_of_measurement"] = "°F";
             discoveryDoc["device_class"] = "temperature";
-            discoveryDoc["value_template"] = "{{ value_json.temperature_F }}";
+            discoveryDoc["value_template"] = "{{ value_json.temperature }}";
             serializeJson(discoveryDoc, discoveryPayload);
-            client.publish(topic_discovery_temp_F, discoveryPayload, true);
+            client.publish(topic_discovery_temp, discoveryPayload, true);
 
             // Altitude Sensor
             discoveryDoc.clear();
@@ -257,9 +257,9 @@ void loop() {
     char timeStr[50];
     strftime(timeStr, sizeof(timeStr), "%m/%d/%y %I:%M%p PST", &timeinfo);
 
-    // **Send MQTT message every 5 minutes with timestamp**
+    // **Send MQTT message every 10 minutes with timestamp**
     static unsigned long mqttSentDisplayTime = 0;
-    if (millis() - lastMQTTSentTime >= 60000) {  // 5 Minute delay
+    if (millis() - lastMQTTSentTime >= 120000) {  // 10 Minute delay
       StaticJsonDocument<200> jsonDoc;
       char mqttPayload[200];
 
@@ -272,9 +272,9 @@ void loop() {
         // Publish Temperature in Fahrenheit
         StaticJsonDocument<50> tempFDoc;
         char tempFPayload[50];
-        tempFDoc["temperature_F"] = temperatureF;
+        tempFDoc["temperature"] = temperatureF;
         serializeJson(tempFDoc, tempFPayload);
-        client.publish(topic_state_temp_F, tempFPayload, true);
+        client.publish(topic_state_temp, tempFPayload, true);
 
         // Publish Altitude (Rounded)
         StaticJsonDocument<50> altitudeDoc;
