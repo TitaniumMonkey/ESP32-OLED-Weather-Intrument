@@ -24,26 +24,26 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
 
 ```
 📺 ESP32_Weather_Station
-├── 📄 sketch.ino             # Main file: Initializes FreeRTOS tasks
-├── 📄 Readme.md              # Project documentation
-├── 📄 LICENSE                # License file
-├── 📺 include
-│   ├── 📄 wifi_manager.h     # Handles Wi-Fi connection & reconnection
-│   ├── 📄 dht_sensor.h       # Reads humidity from DHT11 sensor
-│   ├── 📄 bmp180_sensor.h    # Reads temp, pressure, altitude (with smoothing & offsets)
-│   ├── 📄 mqtt_client.h      # Manages MQTT connection & reconnection
-│   ├── 📄 mqtt_publisher.h   # Publishes sensor data, discovery messages, and status
-│   ├── 📄 oled_display.h     # Updates OLED, auto-shutoff, displays MQTT Sent! message
-│   ├── 📄 time_manager.h     # Handles NTP-based time synchronization
-│   ├── 📄 secrets.h          # Stores Wi-Fi & MQTT credentials (not committed)
-└── 📺 src
-    ├── 📄 wifi_manager.cpp   # Handles Wi-Fi connection, reconnection, and status updates
-    ├── 📄 dht_sensor.cpp     # Reads humidity data from the DHT11 sensor
-    ├── 📄 bmp180_sensor.cpp  # Reads temperature, pressure, and altitude from BMP180 with smoothing
-    ├── 📄 mqtt_client.cpp    # Manages MQTT connection, subscriptions, and reconnections
-    ├── 📄 mqtt_publisher.cpp # Publishes sensor data, discovery messages, and status updates
-    ├── 📄 oled_display.cpp   # Handles OLED updates, auto shutoff, and button press functionality
-    ├── 📄 time_manager.cpp   # Manages NTP-based time synchronization
+├── 📄 sketch.ino          # Main entry point, initializes FreeRTOS tasks
+├── 📄 Readme.md           # Project documentation
+├── 📄 LICENSE             # License file
+├── 📺 include             # Header files for modular components
+│   ├── 📄 wifi_manager.h     # Wi-Fi connection handling
+│   ├── 📄 dht_sensor.h       # DHT11 sensor interface
+│   ├── 📄 bmp180_sensor.h    # BMP180 sensor interface with calibration
+│   ├── 📄 mqtt_client.h      # MQTT connection management
+│   ├── 📄 mqtt_publisher.h   # MQTT message publishing
+│   ├── 📄 oled_display.h     # OLED display control
+│   ├── 📄 time_manager.h     # NTP time synchronization
+│   ├── 📄 secrets.h          # Wi-Fi & MQTT credentials (excluded from version control)
+└── 📺 src                   # Source files implementing component logic
+    ├── 📄 wifi_manager.cpp   # Handles Wi-Fi connection logic
+    ├── 📄 dht_sensor.cpp     # Implements DHT11 sensor reading
+    ├── 📄 bmp180_sensor.cpp  # Implements BMP180 sensor reading with smoothing
+    ├── 📄 mqtt_client.cpp    # Manages MQTT connections and subscriptions
+    ├── 📄 mqtt_publisher.cpp # Formats and sends sensor data via MQTT
+    ├── 📄 oled_display.cpp   # Updates OLED display and manages auto shutoff
+    ├── 📄 time_manager.cpp   # Synchronizes system time via NTP
 ```
 
 ## Secrets Configuration (`secrets.h`)
