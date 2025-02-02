@@ -6,7 +6,7 @@
 </p>
 
 ## Overview
-This project uses an **ESP32**, a **BMP180 Temperature & Pressure/Alt sensor**, **DHT11 temperature & humidity sensor**, and an **SSD1306 OLED display** to collect environmental data and send it to an **MQTT broker**. The data is displayed on the OLED screen and published to an MQTT topic every **5 minutes**.
+This project uses an **ESP32**, a **BMP180 Temperature & Pressure/Alt sensor**, **DHT11 for a humidity sensor**, and an **SSD1306 OLED display** to collect environmental data and send it to an **MQTT broker**. The data is displayed on the OLED screen and published to an MQTT topic every **5 minutes**.
 
 ## Features
 - Reads **Temperature, Pressure & Altitude** from a **BMP180 Sensor**
