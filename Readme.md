@@ -11,7 +11,7 @@ This project utilizes an **ESP32**, a **BMP180 temperature, pressure & altitude 
 - **Wi-Fi Connectivity** for NTP time synchronization
 - **MQTT Data Publishing** every **5 minutes**, with a timestamp
 - **MQTT Auto Discovery** for **Home Assistant Integration**
-- **OLED Displays "MQTT Sent!" for 5 seconds when an MQTT message is published**
+- **OLED Displays "MQTT Sent!"** for 5 seconds when an MQTT message is published
 - **OLED Toggle** via a physical button
 - **Smoothed Altitude Measurements** using a moving average filter
 - **Automatic Reconnection to MQTT Broker**
@@ -36,7 +36,7 @@ Ensure you have the following libraries installed in **Arduino IDE**:
 5. **Adafruit SSD1306** (by Adafruit)
 6. **ArduinoJson** (for MQTT payload formatting)
 
-### Installing Libraries
+## Installing Libraries
 
 1. Open **Arduino IDE**
 2. Go to **Sketch → Include Library → Manage Libraries**
@@ -45,7 +45,6 @@ Ensure you have the following libraries installed in **Arduino IDE**:
 ## Board Setup in Arduino IDE
 
 1. **Install ESP32 Board Support**
-
    - Open **Arduino IDE**
    - Go to **File → Preferences**
    - In **Additional Board Manager URLs**, add:
@@ -56,7 +55,6 @@ Ensure you have the following libraries installed in **Arduino IDE**:
    - Search for **ESP32** and install the latest version
 
 2. **Select the Board**
-
    - Go to **Tools → Board**
    - Select **ESP32 Dev Module**
    - Set Upload Speed: **115200**
@@ -84,7 +82,7 @@ const long gmtOffset_sec = -8 * 3600; // Pacific Standard Time (PST)
 const int daylightOffset_sec = 0;     // No DST (Set to 3600 for 1 hour DST adjustment)
 ```
 
-#### Finding Your Timezone
+### Finding Your Timezone
 
 To get your **GMT offset**, check:
 
@@ -95,7 +93,7 @@ To get your **GMT offset**, check:
   ```
   Look for `Time zone` and `UTC offset`.
 
-#### Adjusting for DST
+### Adjusting for DST
 
 - If your region **uses DST**, set `daylightOffset_sec` to `3600`.
 - If your region **does not use DST**, keep it as `0`.
@@ -129,56 +127,35 @@ Before uploading the code, create a `secrets.h` file alongside your `.ino` file 
 
 ## MQTT Auto Discovery (Home Assistant Integration)
 
-This ESP32 firmware now **automatically sets up sensors in Home Assistant** via MQTT Auto Discovery.
+This ESP32 firmware now automatically sets up sensors in **Home Assistant** via **MQTT Auto Discovery**.
 
 ### Topics Used:
 
-| Sensor          | State Topic | Discovery Topic |
-|----------------|---------------------------|--------------------------------|
-| Temperature (°F) | `homeassistant/sensor/esp32_temperature_F/state` | `homeassistant/sensor/esp32_temperature_F/config` |
-| Altitude (ft)   | `homeassistant/sensor/esp32_altitude/state` | `homeassistant/sensor/esp32_altitude/config` |
-| Pressure (hPa)  | `homeassistant/sensor/esp32_pressure/state` | `homeassistant/sensor/esp32_pressure/config` |
+| Sensor        | State Topic                                        | Discovery Topic                                    |
+|--------------|-------------------------------------------------|--------------------------------------------------|
+| Temperature  | homeassistant/sensor/esp32_temperature/state   | homeassistant/sensor/esp32_temperature/config   |
+| Altitude     | homeassistant/sensor/esp32_altitude/state      | homeassistant/sensor/esp32_altitude/config      |
+| Pressure     | homeassistant/sensor/esp32_pressure/state      | homeassistant/sensor/esp32_pressure/config      |
 
-If Home Assistant restarts, the ESP32 resends discovery topics when it detects HA is back online.
+If **Home Assistant restarts**, the ESP32 resends discovery topics when it detects HA is back online.
 
-## MQTT Data Format
+## Managing MQTT Topics
 
-The ESP32 publishes the following message to the MQTT topic **every 5 minutes**:
+### **Clearing Retained Messages**
+If you need to remove old retained messages from MQTT, use the following command:
 
-```plaintext
-01/28/25 10:43PM PST | Temp: 18.2 C / 64.8 F | Alt: 380 m / 1247 ft | Pressure: 995 hPa
+```bash
+mosquitto_pub -h <MQTT_BROKER_IP> -t "homeassistant/sensor/esp32_temperature_F/state" -r -n
+mosquitto_pub -h <MQTT_BROKER_IP> -t "homeassistant/sensor/esp32_temperature_F/config" -r -n
 ```
 
-## OLED Display Layout
+Replace `<MQTT_BROKER_IP>` with your actual MQTT broker's IP address.
 
+To confirm messages have been deleted, run:
+```bash
+mosquitto_sub -h <MQTT_BROKER_IP> -t "homeassistant/sensor/esp32_temperature_F/#" -v
 ```
-Temp: 18.2 C / 64.8 F
-Alt: 380 m / 1247 ft
-Pressure: 995 hPa
-
-MQTT Sent!
-
-01/28/25 10:43PM PST
-```
-
-## Troubleshooting
-
-### 1. **OLED Display Not Working**
-
-- Ensure **SDA (D21) & SCL (D22)** are correctly connected.
-- Check **I2C address** (default is `0x3C`).
-- Try scanning I2C devices using an I2C scanner sketch.
-
-### 2. **ESP32 Not Connecting to Wi-Fi**
-
-- Double-check **SSID and Password** in `secrets.h`.
-- Ensure your **Wi-Fi network is 2.4 GHz** (ESP32 doesn't support 5 GHz).
-
-### 3. **MQTT Not Connecting**
-
-- Verify the **MQTT broker IP and credentials** in `secrets.h`.
-- Ensure the broker is running and accessible.
-- Try disabling MQTT authentication temporarily.
+If no output appears, the messages have been successfully deleted.
 
 ## Future Improvements
 
