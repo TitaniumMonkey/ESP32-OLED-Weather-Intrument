@@ -151,7 +151,7 @@ void reconnectMQTT() {
             discoveryDoc["state_topic"] = topic_state_pressure;
             discoveryDoc["unit_of_measurement"] = "hPa";
             discoveryDoc["device_class"] = "pressure";
-            discoveryDoc["value_template"] = "{{ value_json.pressure_hPa }}";
+            discoveryDoc["value_template"] = "{{ value_json.pressure }}";
             serializeJson(discoveryDoc, discoveryPayload);
             client.publish(topic_discovery_pressure, discoveryPayload, true);
 
@@ -321,7 +321,7 @@ void loop() {
       jsonDoc["temperature_F"] = temperatureF;
       jsonDoc["humidity"] = humidity;
       jsonDoc["altitude"] = round(smoothedAltitudeF);  // Rounded to whole feet
-      jsonDoc["pressure_hPa"] = pressure;
+      jsonDoc["pressure"] = pressure;
 
         // Publish Temperature in Fahrenheit
         StaticJsonDocument<50> tempFDoc;
@@ -348,7 +348,7 @@ void loop() {
         // Publish Pressure in hPa
         StaticJsonDocument<50> pressureDoc;
         char pressurePayload[50];
-        pressureDoc["pressure_hPa"] = pressure;
+        pressureDoc["pressure"] = pressure;
         serializeJson(pressureDoc, pressurePayload);
         client.publish(topic_state_pressure, pressurePayload, true);
 
