@@ -3,6 +3,21 @@
 ## Overview
 This project uses an **ESP32**, a **DHT11 temperature & humidity sensor**, and an **SSD1306 OLED display** to collect environmental data and send it to an **MQTT broker**. The data is displayed on the OLED screen and published to an MQTT topic every **5 minutes**.
 
+## Available Branches
+This project has **4 branches**, each with a different setup:
+
+- **main** → Basic ESP32 Weather Station setup with **DHT11 + OLED + MQTT**
+- **bmp180** → Adds **BMP180 barometric pressure sensor** support
+- **bmp180+DHT11** → Combines **DHT11 (temperature & humidity) + BMP180 (pressure & altitude)**
+- **bmp180+DHT11-Refactored-w/ESPTasks** → **Most advanced version** with **FreeRTOS task management**, modularized code, and all features
+
+🔹 **The latest and most feature-rich branch is `bmp180+DHT11-Refactored-w/ESPTasks`.** New features and sensor integrations will be added as new branches.
+
+## Future Plans
+1. **Non-OLED Battery-Powered Version** → Modify for **low-power ESP32** setup without an OLED.
+2. **LoRa & Meshtastic Integration** → Use **LoRaWAN** or **Meshtastic** to transmit sensor data over long distances.
+3. **Additional Sensors** → Support for **BME280, BME680**, and other environmental sensors.
+
 ## Features
 - Reads temperature & humidity from a **DHT11 sensor**
 - Displays real-time data on a **0.96-inch SSD1306 OLED**
@@ -138,11 +153,6 @@ Temperature:
 - Verify the **MQTT broker IP and credentials** in `secrets.h`.
 - Ensure the broker is running and accessible.
 - Try disabling MQTT authentication temporarily.
-
-## Future Improvements
-- Add **OTA updates** for remote firmware upgrades
-- Implement **deep sleep** to save power
-- Add support for **more sensors (BMP280, BME680, etc.)**
 
 ---
 ### 🚀 Enjoy your ESP32 Weather Station!
