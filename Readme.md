@@ -110,7 +110,7 @@ If the ESP32 fails to connect to Wi-Fi or MQTT, the error messages will indicate
 - Open **Arduino IDE → Tools → Serial Monitor** to check if time synchronization is failing.  
 - Restart ESP32 after making changes to apply the new time settings.  
 
-
+---
 ### **4️⃣ OLED Button Delay**
 
 - The button **does work**, but the OLED updates **only every 3 seconds**
