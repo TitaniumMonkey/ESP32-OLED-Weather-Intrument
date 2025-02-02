@@ -1,6 +1,6 @@
 # ESP32 Weather Station with OLED Display & MQTT
 
-![ESP32 Weather Station](https://i.imgur.com/6BIa1wq.jpeg)
+![ESP32 Weather Station](https://i.imgur.com/lgOe5oe.jpeg)
 
 ## Overview
 This project uses an **ESP32**, a **DHT11 temperature & humidity sensor**, and an **SSD1306 OLED display** to collect environmental data and send it to an **MQTT broker**. The data is displayed on the OLED screen and published to an MQTT topic every **5 minutes**.
