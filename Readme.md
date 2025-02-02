@@ -1,4 +1,4 @@
-# ESP32 Weather Station with DHT11, BMP180 & OLED Display using MQTT Sever and Home Automate
+# ESP32 Weather Station with FreeRTOS, DHT11, BMP180 & OLED Display
 
 <p align="center">
   <img src="https://i.imgur.com/6BIa1wq.jpeg" alt="ESP32 Weather Station" width="512" height="512">
@@ -6,161 +6,109 @@
 </p>
 
 ## Overview
-This project uses an **ESP32**, a **BMP180 Temperature & Pressure/Alt sensor**, **DHT11 for a humidity sensor**, and an **SSD1306 OLED display** to collect environmental data and send it to an **MQTT broker**. The data is displayed on the OLED screen and published to an MQTT topic every **5 minutes**.
+This project is an **ESP32-based Weather Station** that collects temperature, humidity, pressure, and altitude data using **DHT11 and BMP180 sensors**. Data is displayed on an **OLED screen** and sent via **MQTT** to a home automation system like **Home Assistant**. The system is designed using **FreeRTOS tasks** for modularity and efficiency.
 
 ## Features
-- Reads **Temperature, Pressure & Altitude** from a **BMP180 Sensor**
-- Reads **humidity** from a **DHT11 sensor**
-- Displays real-time data on a **0.96-inch SSD1306 OLED**
-- Sends data to an **MQTT broker** every 5 minutes
-- Displays a confirmation message when MQTT data is sent
-- Uses **Wi-Fi** to connect to the network and syncs time via **NTP**
-- **Flips the display** to match the ESP32 OLED module's default layout
-- Allows **manual OLED toggling** using the ESP32 **built-in button**
+✅ **Temperature, Humidity, Pressure, and Altitude Monitoring**
+✅ **OLED Display with Auto Shutoff (5 min timeout)**
+✅ **Boot Button (GPIO 0) Toggles OLED ON/OFF**
+✅ **MQTT Publishing Every Minute**
+✅ **Home Assistant Auto-Discovery (Only on Boot)**
+✅ **Persistent MQTT Connection (Prevents Unnecessary Reconnection)**
+✅ **Time Synchronization via NTP (Adjustable Timezone)**
+✅ **FreeRTOS for Efficient Task Management**
 
-## Components Used
-| Component             | Description                   |
-|----------------------|-----------------------------|
-| ESP32 Board         | Wi-Fi-enabled microcontroller |
-| DHT11 Sensor       | Measures **humidity** |
-| BMP180 Sensor      | Measures **temperature, altitude & pressure** |
-| SSD1306 OLED Display | 0.96-inch I2C OLED screen  |
-| MQTT Broker (e.g., Mosquitto) | Receives and processes sensor data |
+## Hardware Components
+| Component              | Description                          |
+|------------------------|--------------------------------------|
+| ESP32 Board           | Wi-Fi-enabled microcontroller       |
+| DHT11 Sensor          | Measures **humidity**               |
+| BMP180 Sensor         | Measures **temperature, altitude & pressure** |
+| SSD1306 OLED Display  | 0.96-inch I2C OLED screen           |
+| MQTT Broker (e.g., Mosquitto) | Receives & processes sensor data |
 
-## Required Libraries
-Install the following libraries in **Arduino IDE**:
-
-1. **WiFi** (Built-in for ESP32)
-2. **PubSubClient** (by Nick O'Leary)
-3. **DHT sensor library** (by Adafruit)
-4. **Adafruit GFX Library** (by Adafruit)
-5. **Adafruit SSD1306** (by Adafruit)
-
-### Installing Libraries
-1. Open **Arduino IDE**
-2. Go to **Sketch → Include Library → Manage Libraries**
-3. Search for and install the required libraries
-
-## Board Setup in Arduino IDE
-1. **Install ESP32 Board Support**
-   - Open **Arduino IDE**
-   - Go to **File → Preferences**
-   - In **Additional Board Manager URLs**, add:
-     ```
-     https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-     ```
-   - Go to **Tools → Board → Boards Manager**
-   - Search for **ESP32** and install the latest version
-
-2. **Select the Board**
-   - Go to **Tools → Board**
-   - Select **ESP32 Dev Module**
-   - Set Upload Speed: **115200**
-   - Flash Mode: **QIO**
-   - Partition Scheme: **Default**
-
-## Wiring Diagram
-|   ESP32 Pin  | DHT11 Pin |
-|--------------|-----------|
-| 3.3V         | VCC       |
-| GND          | GND       |
-| GPIO4 (D4)   | DATA      |
-
-|  ESP32 Pin   | BMP180 Pin |
-|--------------|-----------|
-| 3.3V         | VCC       |
-| GND          | GND       |
-| GPIO21 (D21) | SDA       |
-| GPIO22 (D22) | SCL       |
- 
-## Configuration
-
-### Setting Your Timezone
-This project uses **NTP (Network Time Protocol)** to sync the correct time. You can adjust the timezone and **enable/disable daylight saving time (DST)** in the following section of the code:
-
+## Configuration & Adjustments
+### **1️⃣ Timezone Adjustment** (Modify in `time_manager.cpp`)
+By default, the system is set to **Pacific Standard Time (PST)**:
 ```cpp
-const char* ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = -8 * 3600; // Pacific Standard Time (PST)
-const int daylightOffset_sec = 0;     // No DST (Set to 3600 for 1 hour DST adjustment)
+const long gmtOffset_sec = -8 * 3600;    // ✅ Adjust for your timezone
+const int daylightOffset_sec = 3600;     // ✅ Adjust for daylight savings
 ```
+Modify these values to match your local timezone.
 
-#### Finding Your Timezone
-To get your **GMT offset**, you can check:
-- [Time Zone List](https://en.wikipedia.org/wiki/List_of_UTC_time_offsets)
-- Running this Linux command:
-  ```bash
-  timedatectl
-  ```
-  Look for `Time zone` and `UTC offset`.
-
-#### Adjusting for DST
-- If your region **uses DST**, change `daylightOffset_sec` to `3600` (1 hour forward).
-- If your region **does not use DST**, keep it as `0`.
-
-Before uploading the code, create a `secrets.h` file next to your `.ino` file with your **Wi-Fi and MQTT credentials**:
-
+### **2️⃣ Sensor Offsets for Calibration** (Modify in `bmp180_sensor.cpp`)
+If your sensor readings are slightly off, you can adjust the offsets:
 ```cpp
-#ifndef SECRETS_H
-#define SECRETS_H
+float tempOffset = 0.0;     // ✅ Adjust for sensor drift
+float pressureOffset = 0.0; // ✅ Adjust for barometric calibration
+float altitudeOffset = 0.0; // ✅ Adjust for known altitude difference
+```
+Modify these values based on reference readings.
 
-#define WIFI_SSID "Your_WiFi_SSID"
-#define WIFI_PASSWORD "Your_WiFi_Password"
+## FreeRTOS Task Structure
+The system uses **FreeRTOS tasks** to manage various functions:
+| **Task**               | **Function**                        |
+|------------------------|------------------------------------|
+| `wifiTask()`          | Manages Wi-Fi connection & reconnection |
+| `dhtTask()`          | Reads **humidity** from DHT11       |
+| `bmpTask()`          | Reads **temperature, pressure, altitude** from BMP180 |
+| `mqttTask()`         | Publishes sensor data via MQTT every **1 minute** |
+| `oledTask()`         | Updates OLED display & handles auto shutoff |
+| `serialOutputTask()` | Prints sensor data to **Serial Monitor** every **15 seconds** |
+| `buttonTask()`       | Toggles OLED ON/OFF when boot button is pressed |
 
-#define MQTT_SERVER "Your_MQTT_Broker_IP"
-#define MQTT_USER "Your_MQTT_Username"
-#define MQTT_PASS "Your_MQTT_Password"
+## MQTT Configuration & Topics
+The system publishes sensor data to MQTT topics every **1 minute**.
+| **Topic**                     | **Description**                    |
+|-------------------------------|------------------------------------|
+| `homeassistant/sensor/esp32_temperature/state` | Temperature in Fahrenheit |
+| `homeassistant/sensor/esp32_humidity/state`    | Humidity percentage |
+| `homeassistant/sensor/esp32_pressure/state`    | Pressure in hPa |
+| `homeassistant/sensor/esp32_altitude/state`    | Altitude in feet |
+| `weather/data`                 | JSON object containing all sensor readings |
 
-#endif // SECRETS_H
+### **Sample MQTT Payload (weather/data)**
+```json
+{
+  "temperature": 70.3,
+  "humidity": 40.0,
+  "pressure": 1000,
+  "altitude": 383
+}
 ```
 
-## Uploading the Code
-1. **Connect the ESP32 to your PC via USB**
-2. Open the **Arduino IDE**
-3. Select **ESP32 Dev Module** under **Tools → Board**
-4. Open **Tools → Port** and select the correct COM port
-5. Click the **Upload** button
-6. Open the **Serial Monitor** (baud rate: `19200`) to check the logs
+## OLED Display Behavior
+- **Displays sensor data & timestamp**
+- **Shows "MQTT Sent!" for 5 seconds after publishing**
+- **Auto shuts off after 5 minutes of inactivity**
+- **Can be toggled ON/OFF via the boot button**
 
-## MQTT Data Format
-The ESP32 publishes the following message to the MQTT topic:
-```plaintext
-01/28/25 10:43PM PST | Temp: 18.2 C / 64.8 F | Humidity: 35.0 % | Alt: 72.1 m / 236 ft | Pressure: 999 hPa
+## Installation & Setup
+1. **Install Required Libraries** in Arduino IDE:
+   - `WiFi.h`
+   - `PubSubClient`
+   - `Adafruit GFX`
+   - `Adafruit SSD1306`
+   - `Adafruit BMP085`
+   - `DHT sensor library`
+2. **Configure `secrets.h` with Wi-Fi & MQTT Credentials**
+3. **Compile and Upload to ESP32**
+4. **Run MQTT Subscriber Command to Verify Data:**
+```sh
+mosquitto_sub -h $BrokerIP -u $BrokerUser -P $UserPass! -t "#" -v
 ```
-
-## Expected OLED Display Layout
-```
-Temp: 22.5 C / 72.5 F
-Humidity: 37.0%
-Alt: 72.1 m / 236 ft
-Pressure: 999 hPa
-
-02/01/25 05:33PM PST
-```
-
-## Project Image
-![ESP32 Weather Station](20250201_173342.jpg)
 
 ## Troubleshooting
-### 1. **OLED Display Not Working**
-- Ensure **SDA (GPIO21) & SCL (GPIO22)** are correctly connected.
-- Check **I2C address** (default is `0x3C`).
-- Try scanning I2C devices using an I2C scanner sketch.
+### **2️⃣ MQTT Messages Not Showing?**
+- Run the MQTT subscriber command above to check logs
+- Ensure ESP32 is **connected to Wi-Fi**
+- Check if MQTT broker is **online**
 
-### 2. **ESP32 Not Connecting to Wi-Fi**
-- Double-check **SSID and Password** in `secrets.h`.
-- Ensure your **Wi-Fi network is 2.4 GHz** (ESP32 doesn't support 5 GHz).
-
-### 3. **MQTT Not Connecting**
-- Verify the **MQTT broker IP and credentials** in `secrets.h`.
-- Ensure the broker is running and accessible.
-- Try disabling MQTT authentication temporarily.
-
-## Future Improvements
-- Add **OTA updates** for remote firmware upgrades
-- Implement **deep sleep** to save power
-- Add support for **more sensors (BMP280, BME680, etc.)**
+### **3️⃣ Time is Incorrect?**
+- Adjust **timezone settings** in `time_manager.cpp`
+- Ensure ESP32 has an **active internet connection**
 
 ---
-### 🚀 Enjoy your ESP32 Weather Station!
-Let me know if you have any issues. Feel free to contribute and improve this project! 😊
+🚀 **Your ESP32 Weather Station is now fully functional!** Enjoy real-time environmental data with MQTT & OLED integration! 🚀
+
 
