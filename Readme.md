@@ -24,26 +24,26 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
 
 ```
 📺 ESP32_Weather_Station
-├── 📄 sketch.ino          # Main entry point, initializes FreeRTOS tasks
-├── 📄 Readme.md           # Project documentation
-├── 📄 LICENSE             # License file
-├── 📺 include             # Header files for modular components
-│   ├── 📄 wifi_manager.h     # Wi-Fi connection handling
-│   ├── 📄 dht_sensor.h       # DHT11 sensor interface
-│   ├── 📄 bmp180_sensor.h    # BMP180 sensor interface with calibration
-│   ├── 📄 mqtt_client.h      # MQTT connection management
-│   ├── 📄 mqtt_publisher.h   # MQTT message publishing
-│   ├── 📄 oled_display.h     # OLED display control
-│   ├── 📄 time_manager.h     # NTP time synchronization
-│   ├── 📄 secrets.h          # Wi-Fi & MQTT credentials (excluded from version control)
-└── 📺 src                   # Source files implementing component logic
-    ├── 📄 wifi_manager.cpp   # Handles Wi-Fi connection logic
-    ├── 📄 dht_sensor.cpp     # Implements DHT11 sensor reading
-    ├── 📄 bmp180_sensor.cpp  # Implements BMP180 sensor reading with smoothing
-    ├── 📄 mqtt_client.cpp    # Manages MQTT connections and subscriptions
-    ├── 📄 mqtt_publisher.cpp # Formats and sends sensor data via MQTT
-    ├── 📄 oled_display.cpp   # Updates OLED display and manages auto shutoff
-    ├── 📄 time_manager.cpp   # Synchronizes system time via NTP
+├── 📄 sketch.ino               # Main entry point, initializes FreeRTOS tasks
+├── 📄 Readme.md                # Project documentation
+├── 📄 LICENSE                  # License file
+├── 📺 include                  # Header files for modular components
+│   ├── 📄 wifi_manager.h       # Wi-Fi connection handling
+│   ├── 📄 dht_sensor.h         # DHT11 sensor interface
+│   ├── 📄 bmp180_sensor.h      # BMP180 sensor interface with calibration
+│   ├── 📄 mqtt_client.h        # MQTT connection management
+│   ├── 📄 mqtt_publisher.h     # MQTT message publishing
+│   ├── 📄 oled_display.h       # OLED display control
+│   ├── 📄 time_manager.h       # NTP time synchronization
+│   ├── 📄 secrets.h            # Wi-Fi & MQTT credentials (excluded from version control)
+└── 📺 src                      # Source files implementing component logic
+    ├── 📄 wifi_manager.cpp     # Handles Wi-Fi connection logic
+    ├── 📄 dht_sensor.cpp       # Implements DHT11 sensor reading
+    ├── 📄 bmp180_sensor.cpp    # Implements BMP180 sensor reading with smoothing
+    ├── 📄 mqtt_client.cpp      # Manages MQTT connections and subscriptions
+    ├── 📄 mqtt_publisher.cpp   # Formats and sends sensor data via MQTT
+    ├── 📄 oled_display.cpp     # Updates OLED display and manages auto shutoff
+    ├── 📄 time_manager.cpp     # Synchronizes system time via NTP
 ```
 
 ## Secrets Configuration (`secrets.h`)
