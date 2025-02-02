@@ -1,4 +1,4 @@
-# ESP32 Weather Station with OLED Display & MQTT
+# ESP32 Weather Station with DHT11, BMP180 & OLED Display using MQTT Sever and Home Automate
 
 <p align="center">
   <img src="https://i.imgur.com/6BIa1wq.jpeg" alt="ESP32 Weather Station" width="512" height="512">
