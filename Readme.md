@@ -4,7 +4,7 @@
 This project uses an **ESP32**, a **DHT11 temperature & humidity sensor**, and an **SSD1306 OLED display** to collect environmental data and send it to an **MQTT broker**. The data is displayed on the OLED screen and published to an MQTT topic every **5 minutes**.
 
 ## Features
-- Reads temperature & humidity from a **DHT11 sensor**
+- Reads **temperature & humidity** from a **DHT11 sensor**
 - Displays real-time data on a **0.96-inch SSD1306 OLED**
 - Sends data to an **MQTT broker** every 5 minutes
 - Displays a confirmation message when MQTT data is sent
@@ -16,7 +16,8 @@ This project uses an **ESP32**, a **DHT11 temperature & humidity sensor**, and a
 | Component             | Description                   |
 |----------------------|-----------------------------|
 | ESP32 Board         | Wi-Fi-enabled microcontroller |
-| DHT11 Sensor       | Measures temperature & humidity |
+| DHT11 Sensor       | Measures **temperature & humidity** |
+| BMP180 Sensor      | Measures **altitude & pressure** |
 | SSD1306 OLED Display | 0.96-inch I2C OLED screen  |
 | MQTT Broker (e.g., Mosquitto) | Receives and processes sensor data |
 
@@ -53,12 +54,19 @@ Install the following libraries in **Arduino IDE**:
    - Partition Scheme: **Default**
 
 ## Wiring Diagram
-| ESP32 Pin | DHT11 Pin |
-|-----------|----------|
-| 3.3V      | VCC      |
-| GND       | GND      |
-| GPIO15    | DATA     |
+|   ESP32 Pin  | DHT11 Pin |
+|--------------|-----------|
+| 3.3V         | VCC       |
+| GND          | GND       |
+| GPIO4 (D4)   | DATA      |
 
+|  ESP32 Pin   | BMP180 Pin |
+|--------------|-----------|
+| 3.3V         | VCC       |
+| GND          | GND       |
+| GPIO21 (D21) | SDA       |
+| GPIO22 (D22) | SCL       |
+ 
 ## Configuration
 
 ### Setting Your Timezone
@@ -110,19 +118,21 @@ Before uploading the code, create a `secrets.h` file next to your `.ino` file wi
 ## MQTT Data Format
 The ESP32 publishes the following message to the MQTT topic:
 ```plaintext
-01/28/25 10:43PM PST | Humidity: 35.0 % | Temperature: 18.2 °C | 64.8 °F
+01/28/25 10:43PM PST | Temp: 18.2 C / 64.8 F | Humidity: 35.0 % | Alt: 72.1 m / 236 ft | Pressure: 999 hPa
 ```
 
 ## Expected OLED Display Layout
 ```
-Humidity:
-  35.0%
-Temperature:
-  18.2 C
-  64.8 F
+Temp: 22.5 C / 72.5 F
+Humidity: 37.0%
+Alt: 72.1 m / 236 ft
+Pressure: 999 hPa
 
-01/28/25 10:43PM PST
+02/01/25 05:33PM PST
 ```
+
+## Project Image
+![ESP32 Weather Station](20250201_173342.jpg)
 
 ## Troubleshooting
 ### 1. **OLED Display Not Working**
