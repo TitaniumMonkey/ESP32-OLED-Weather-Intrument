@@ -35,7 +35,7 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
 │   ├── 📄 mqtt_publisher.h     # MQTT message publishing
 │   ├── 📄 oled_display.h       # OLED display control
 │   ├── 📄 time_manager.h       # NTP time synchronization
-│   ├── 📄 secrets.h            # Wi-Fi & MQTT credentials (excluded from version control)
+│   ├── 📄 secrets.h            # Wi-Fi & MQTT credentials (template included but must be updated)
 └── 📺 src                      # Source files implementing component logic
     ├── 📄 wifi_manager.cpp     # Handles Wi-Fi connection logic
     ├── 📄 dht_sensor.cpp       # Implements DHT11 sensor reading
@@ -48,7 +48,7 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
 
 ## Secrets Configuration (`secrets.h`)
 
-Create a `secrets.h` file in the `include` directory with the following format:
+Edit the `secrets.h` file in the `include` directory with your SSID/Pass & MQTT IP/User/Pass:
 
 ```cpp
 #ifndef SECRETS_H
@@ -67,21 +67,53 @@ Create a `secrets.h` file in the `include` directory with the following format:
 
 ## Troubleshooting
 
+### **1️⃣ Basic Debugging & Serial Monitor**
+
+Before troubleshooting specific issues, connect your **ESP32 to a PC via USB** and open the **Arduino IDE Serial Monitor** to check real-time logs:
+
+1. **Open Arduino IDE** → Select the correct **board & port**.  
+2. **Go to `Tools` → `Serial Monitor`**.  
+3. **Set baud rate** to `115200` (or the project’s configured baud rate).  
+4. Observe the output to check:
+   - **Wi-Fi connection status**  
+   - **MQTT broker connection logs**  
+   - **Sensor readings & system messages**  
+
+If the ESP32 fails to connect to Wi-Fi or MQTT, the error messages will indicate where the issue is.
+
+---
+
 ### **2️⃣ MQTT Messages Not Showing?**
 
-- Run the MQTT subscriber command above to check logs
-- Ensure ESP32 is **connected to Wi-Fi**
-- Check if MQTT broker is **online**
+- Run the following command to subscribe to **all MQTT messages** and check if data is being published:
+  ```sh
+  mosquitto_sub -h <MQTT_BROKER_IP_OR_HOST> -u <MQTT_USER> -P <MQTT_PASS> -t "#" -v
+  ```
+  - Replace `<MQTT_BROKER_IP_OR_HOST>` with your **MQTT broker’s IP address or hostname**  
+  - Replace `<MQTT_USER>` and `<MQTT_PASS>` with your **MQTT credentials**  
+  - **MQTT should not be left in unauthenticated mode** for security reasons.  
+
+- Ensure ESP32 is **connected to Wi-Fi**  
+- Check if MQTT broker is **online and accessible**  
+
+---
 
 ### **3️⃣ Time is Incorrect?**
 
-- Adjust **timezone settings** in `time_manager.cpp`
-- Ensure ESP32 has an **active internet connection**
+- Adjust the **timezone settings** in `time_manager.cpp`:
+  ```cpp
+  const long gmtOffset_sec = -8 * 3600;  // Update for your timezone
+  const int daylightOffset_sec = 3600;   // Set to 0 if no daylight savings
+  configTime(gmtOffset_sec, daylightOffset_sec, "pool.ntp.org");
+  ```
+- Ensure ESP32 has an **active internet connection** (NTP sync requires Wi-Fi).  
+- Open **Arduino IDE → Tools → Serial Monitor** to check if time synchronization is failing.  
+- Restart ESP32 after making changes to apply the new time settings.  
+
 
 ### **4️⃣ OLED Button Delay**
 
 - The button **does work**, but the OLED updates **only every 3 seconds**
 - If you press the button, **wait up to 3 seconds** before the screen reacts
-- **Only one press is needed**—do not repeatedly press the button
 
 🚀 **Your ESP32 Weather Station is now fully functional!** Enjoy real-time environmental data with MQTT & OLED integration! 🚀
