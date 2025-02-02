@@ -5,10 +5,11 @@
 #include <PubSubClient.h>
 #include "secrets.h"
 
-extern WiFiClient espClient;
-extern PubSubClient client;
+// External client declarations
+extern WiFiClient espClient;     // WiFi client instance
+extern PubSubClient client;      // MQTT client instance
 
-// ✅ Last working version of setupMQTT()
-void setupMQTT();
+// Function declaration
+void setupMQTT();                // Sets up MQTT connection
 
 #endif // MQTT_CLIENT_H
