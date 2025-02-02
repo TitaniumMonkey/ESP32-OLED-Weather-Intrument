@@ -3,11 +3,12 @@
 
 #include <PubSubClient.h>
 
+// External MQTT client declaration
 extern PubSubClient client;
 
-// ✅ Keep the last working function declarations
-void publishMQTTStatus(bool online);
-void publishDiscoveryMessages();
-void publishSensorData();
+// Function declarations
+void publishMQTTStatus(bool online);    // Publishes device online/offline status
+void publishDiscoveryMessages();        // Publishes sensor discovery messages
+void publishSensorData();               // Publishes current sensor readings
 
 #endif // MQTT_PUBLISHER_H
