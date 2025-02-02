@@ -2,9 +2,10 @@
 #define WIFI_MANAGER_H
 
 #include <WiFi.h>
-#include "include/secrets.h"  // ✅ Update path
+#include "include/secrets.h"  // Includes Wi-Fi credentials
 
-void setupWiFi();
-void maintainWiFi();
+// Function declarations
+void setupWiFi();     // Sets up Wi-Fi connection
+void maintainWiFi();  // Maintains Wi-Fi connection
 
 #endif // WIFI_MANAGER_H
