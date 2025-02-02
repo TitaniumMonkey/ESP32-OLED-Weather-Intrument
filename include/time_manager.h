@@ -3,8 +3,9 @@
 
 #include <time.h>
 
-void setupTime();  // ✅ Function to set up NTP time sync
-void updateTimeString();
-const char* getTimeString();
+// Function declarations
+void setupTime();           // Initializes NTP time synchronization
+void updateTimeString();    // Updates formatted time string
+const char* getTimeString(); // Returns current formatted time string
 
 #endif // TIME_MANAGER_H
