@@ -5,12 +5,15 @@
 #include <DHT.h>
 #include <DHT_U.h>
 
-#define DHTPIN 4          // GPIO pin connected to DHT11
-#define DHTTYPE DHT11     // DHT sensor type
+// DHT sensor configuration
+#define DHTPIN 4          // GPIO pin for DHT sensor connection
+#define DHTTYPE DHT11     // Specifies DHT11 sensor type
 
-extern float humidity;
+// External variable declaration
+extern float humidity;    // Current humidity reading (%)
 
-void setupDHTSensor();
-void readDHTSensor();
+// Function declarations
+void setupDHTSensor();    // Initializes DHT sensor
+void readDHTSensor();     // Reads humidity from DHT sensor
 
 #endif // DHT_SENSOR_H
