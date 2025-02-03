@@ -46,24 +46,28 @@ void bmpTask(void *pvParameters) {
 
 // **MQTT Task: Handles MQTT communication**
 void mqttTask(void *pvParameters) {
-    setupMQTT();  //  Remove `true`, just call `setupMQTT()`
-    publishDiscoveryMessages();  //  Send discovery messages only on boot
-
+    setupMQTT();  // Initial setup here
+    
+    // Initial delay of 1 minute to allow sensors to stabilize
+    vTaskDelay(pdMS_TO_TICKS(60000));
+    
     while (1) {
         if (!client.connected()) {
-            setupMQTT();  //  Remove `false`, just call `setupMQTT()`
+            setupMQTT();  // Reconnect if disconnected
+            vTaskDelay(pdMS_TO_TICKS(60000));
+            continue;
         }
 
-        if (client.connected()) {  
+        if (client.connected()) {
             publishSensorData();
         } else {
             Serial.println("⚠️ MQTT Publish Failed! Retrying in 5 seconds...");
-            vTaskDelay(pdMS_TO_TICKS(5000));  //  Retry in 5 seconds if disconnected
-            continue;  //  Skip this cycle and retry later
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            continue;
         }
 
-        client.loop();  //  Keep connection alive
-        vTaskDelay(pdMS_TO_TICKS(300000)); //  Publish every 5 minutes
+        client.loop();
+        vTaskDelay(pdMS_TO_TICKS(300000)); // Publish every 5 minutes
     }
 }
 
