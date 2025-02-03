@@ -118,6 +118,5 @@ void publishSensorData() {
     // Log success status
     if (success) {
         mqttSentDisplayTime = millis();  // Update last successful send time
-        Serial.println("📡 MQTT Sensor Data Published!");
     }
 }
