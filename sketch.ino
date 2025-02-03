@@ -1,198 +1,160 @@
-#include <WiFi.h>
-#include <PubSubClient.h>
-#include <DHT.h>
-#include <time.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-#include "secrets.h"
+#include <Arduino.h>
+#include "include/wifi_manager.h"
+#include "include/dht_sensor.h"
+#include "include/bmp180_sensor.h"
+#include "include/mqtt_client.h"
+#include "include/mqtt_publisher.h"
+#include "include/oled_display.h"
+#include "include/time_manager.h"
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET    -1
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// Task handle declarations for FreeRTOS tasks
+TaskHandle_t wifiTaskHandle;
+TaskHandle_t dhtTaskHandle;
+TaskHandle_t bmpTaskHandle;
+TaskHandle_t mqttTaskHandle;
+TaskHandle_t oledTaskHandle;
+TaskHandle_t serialOutputTaskHandle;
 
-// Button Configuration
-#define BUTTON_PIN 0  // ESP32 Built-in button (NOT the reset button)
-bool oledOn = true;  // Track OLED state
-unsigned long lastDebounceTime = 0;
-const unsigned long debounceDelay = 200;  // 200ms debounce
-
-// MQTT topic
-const char* topic = "Sensors/DHT11/01";
-
-// DHT Sensor Setup
-#define DHTPIN 15
-#define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
-
-// Wi-Fi and MQTT Clients
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-// Time Configuration
-const char* ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = -8 * 3600; // Pacific Standard Time (PST)
-const int daylightOffset_sec = 0;     // No DST
-
-unsigned long lastMQTTSentTime = 0;
-const unsigned long mqttInterval = 300000; // 5 minutes in milliseconds
-
+// Timing variable for serial output
 unsigned long lastSerialPrintTime = 0;
-const unsigned long serialInterval = 15000; // **15 seconds in milliseconds**
 
-void reconnectMQTT() {
-    while (!client.connected()) {
-        if (client.connect("ESP32Weather", MQTT_USER, MQTT_PASS)) {
-            Serial.println("✅ Connected to MQTT Broker!");
-        } else {
-            Serial.println("❌ Failed to connect to MQTT Broker! Retrying in 5 seconds...");
-            delay(5000);
+/**
+ * Wi-Fi task: Maintains Wi-Fi connection
+ */
+void wifiTask(void *pvParameters) {
+    setupWiFi();
+    while (1) {
+        maintainWiFi(); // Keep Wi-Fi connected
+        vTaskDelay(pdMS_TO_TICKS(10000)); // Check Wi-Fi every 10 seconds
+    }
+}
+
+/**
+ * DHT Sensor Task: Reads humidity sensor
+ */
+void dhtTask(void *pvParameters) {
+    vTaskDelay(pdMS_TO_TICKS(2000));  // Initial delay for sensor initialization
+    while (1) {
+        readDHTSensor();
+        vTaskDelay(pdMS_TO_TICKS(2000)); // Read every 2 seconds
+    }
+}
+
+/**
+ * BMP180 Sensor Task: Reads pressure, temperature, and altitude
+ */
+void bmpTask(void *pvParameters) {
+    while (1) {
+        readBMP180Sensor();
+        vTaskDelay(pdMS_TO_TICKS(5000)); // Read every 5 seconds
+    }
+}
+
+/**
+ * MQTT Task: Handles MQTT communication
+ */
+void mqttTask(void *pvParameters) {
+    setupMQTT();  // Initial setup here
+    int reconnectAttempts = 0;
+    
+    // Delay for 1 minute to allow sensors to stabilize before first publish
+    vTaskDelay(pdMS_TO_TICKS(60000)); 
+    
+    while (1) {
+        if (!client.connected()) {
+            // Attempt to reconnect up to 3 times
+            while (!client.connected() && reconnectAttempts < 3) {
+                setupMQTT();  // Attempt to reconnect immediately
+                reconnectAttempts++;
+                if (!client.connected()) {
+                    // No output here, just increment the attempt counter
+                    vTaskDelay(pdMS_TO_TICKS(1666)); // Wait 1.666 seconds (5/3 seconds) between attempts
+                }
+            }
+
+            // If after 3 attempts it's still not connected, print an error
+            if (!client.connected()) {
+                Serial.println("⚠️ MQTT Reconnection Failed after 3 attempts! Retrying in 5 seconds...");
+                reconnectAttempts = 0;  // Reset the counter
+                vTaskDelay(pdMS_TO_TICKS(5000));
+            } else {
+                reconnectAttempts = 0;  // Reset the counter if connected
+            }
         }
+
+        if (client.connected()) {
+            publishSensorData();
+            // Add the success message here
+            Serial.println("📡 MQTT Sensor Data Published!");
+        } else {
+            // This else block should not be reached if the above logic is correct
+            // But included for completeness
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            continue;
+        }
+
+        client.loop();
+        vTaskDelay(pdMS_TO_TICKS(300000)); // Publish every 5 minutes
     }
 }
 
-void waitForTimeSync() {
-    Serial.print("Synchronizing time");
-    time_t now = time(nullptr);
-    int retries = 10;
+/**
+ * Serial output task: Prints sensor data periodically
+ */
+void serialOutputTask(void *pvParameters) {
+    while (1) {
+        unsigned long currentTime = millis();
 
-    while (now < 1700000000 && retries > 0) {
-        Serial.print(".");
-        delay(1000);
-        now = time(nullptr);
-        retries--;
-    }
+        if (currentTime - lastSerialPrintTime >= 60000) {  // Print every 1 minute
+            lastSerialPrintTime = currentTime;
 
-    if (now < 1700000000) {
-        Serial.println("\n⚠️ Time sync failed! Check your internet connection or NTP server.");
-    } else {
-        Serial.println("\n⏳ Time synchronized successfully!");
+            updateTimeString();  // Ensure timestamp is updated
+
+            // Convert and Smooth Values
+            float temperatureF = (temperature * 9 / 5) + 32;
+            float altitudeFt = altitude * 3.28084;
+            float smoothedAltitudeM = altitude;  // Placeholder for smoothing logic if needed
+            float smoothedAltitudeF = altitudeFt;
+
+            // Print Serial Output in Correct Order
+            Serial.printf("%s | Temp: %.2f C / %.2f F | Humidity: %.1f%% | Alt: %.0f m / %.0f ft | Pressure: %.0f hPa\n",
+                          getTimeString(), temperature, temperatureF, humidity, smoothedAltitudeM, smoothedAltitudeF, pressure);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));  // Task runs every second, but serial prints every minute
     }
 }
+
+// Declaration of oledTask function before setup
+void oledTask(void *pvParameters);
 
 void setup() {
     Serial.begin(19200);
-    delay(2000);
-    Serial.println("\n🚀 ESP32 is starting up...");
+    
+    setupWiFi();
+    setupTime();
+    setupDHTSensor();
+    setupBMP180Sensor();
+    setupMQTT();
+    setupOLED();
 
-    pinMode(BUTTON_PIN, INPUT_PULLUP); // Set button as input with pull-up resistor
-
-    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-        Serial.println("SSD1306 allocation failed");
-        for (;;);
-    }
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setRotation(2); // Flip screen 180 degrees
-
-    // Connect to Wi-Fi
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    Serial.print("Connecting to Wi-Fi");
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(1000);
-        Serial.print(".");
-    }
-    Serial.println("\n✅ Connected to Wi-Fi!");
-
-    // Connect to MQTT Broker
-    client.setServer(MQTT_SERVER, 1883);
-    reconnectMQTT();
-
-    // Initialize the DHT Sensor
-    dht.begin();
-
-    // Configure and synchronize time
-    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-    waitForTimeSync();
+    // Initialize FreeRTOS Tasks
+    xTaskCreatePinnedToCore(wifiTask, "WiFiTask", 4096, NULL, 1, &wifiTaskHandle, 0);
+    xTaskCreatePinnedToCore(dhtTask, "DHTTask", 3072, NULL, 1, &dhtTaskHandle, 1);
+    xTaskCreatePinnedToCore(bmpTask, "BMPTask", 2048, NULL, 1, &bmpTaskHandle, 1);
+    xTaskCreatePinnedToCore(mqttTask, "MQTTTask", 4096, NULL, 1, &mqttTaskHandle, 0);
+    xTaskCreatePinnedToCore(oledTask, "OLEDTask", 4096, NULL, 1, &oledTaskHandle, 1);
+    xTaskCreatePinnedToCore(serialOutputTask, "SerialOutputTask", 4096, NULL, 1, &serialOutputTaskHandle, 0);
 }
 
 void loop() {
-    if (!client.connected()) {
-        Serial.println("MQTT disconnected. Reconnecting...");
-        reconnectMQTT();
-    }
-    client.loop();
+    vTaskDelay(pdMS_TO_TICKS(1000));
+}
 
-    // Handle button press
-    static bool buttonPressed = false;
-    if (digitalRead(BUTTON_PIN) == LOW) { // Button is pressed
-        if (!buttonPressed && (millis() - lastDebounceTime > debounceDelay)) {
-            buttonPressed = true;
-            lastDebounceTime = millis();
-            oledOn = !oledOn;  // Toggle OLED state
-            Serial.printf("📟 OLED %s\n", oledOn ? "ON" : "OFF");
-
-            if (!oledOn) {
-                display.clearDisplay();
-                display.display();  // Turn OLED off
-            }
-        }
-    } else {
-        buttonPressed = false;
-    }
-
-    // Read temperature and humidity
-    float humidity = dht.readHumidity();
-    float temperatureC = dht.readTemperature();
-    float temperatureF = (temperatureC * 1.8) + 32;
-
-    if (isnan(humidity) || isnan(temperatureC)) {
-        Serial.println("⚠️ Failed to read from DHT sensor!");
-        return;
-    }
-
-    // Serial output every 15 seconds
-    if (millis() - lastSerialPrintTime >= serialInterval) {
-        time_t now = time(nullptr);
-        struct tm timeinfo;
-        localtime_r(&now, &timeinfo);
-        
-        char timeStr[50];  // Corrected buffer size
-        strftime(timeStr, sizeof(timeStr), "%m/%d/%y %I:%M%p PST", &timeinfo);
-
-        Serial.printf("%s | Humidity: %.2f %% | Temperature: %.2f °C | %.2f °F\n",
-                      timeStr, humidity, temperatureC, temperatureF);
-        lastSerialPrintTime = millis();
-    }
-
-    // Send MQTT message every 5 minutes
-    if (millis() - lastMQTTSentTime >= mqttInterval) {
-        char message[100];
-        snprintf(message, sizeof(message), "Humidity: %.2f %% | Temp: %.2f °C | %.2f °F",
-                 humidity, temperatureC, temperatureF);
-        client.publish(topic, message, true);
-        lastMQTTSentTime = millis();
-    }
-
-    // Update OLED display only if it's ON
-    if (oledOn) {
-        display.clearDisplay();
-        display.setTextColor(WHITE);
-        
-        // Display Sensor Data
-        display.setTextSize(1);
-        display.setCursor(0, 0);
-        display.println("Humidity:");
-        display.setCursor(10, 10);
-        display.println(String(humidity, 1) + " %");
-        display.setCursor(0, 20);
-        display.println("Temperature:");
-        display.setCursor(10, 30);
-        display.println(String(temperatureC, 1) + " C");
-        display.setCursor(10, 40);
-        display.println(String(temperatureF, 1) + " F");
-
-        // Display Time
-        time_t now = time(nullptr);
-        struct tm timeinfo;
-        localtime_r(&now, &timeinfo);
-        char timeStr[50];
-        strftime(timeStr, sizeof(timeStr), "%m/%d/%y %I:%M%p PST", &timeinfo);
-        
-        display.setCursor(0, 54);
-        display.println(timeStr);
-
-        display.display();
+// Implementation of oledTask after setup
+void oledTask(void *pvParameters) {
+    while (1) {
+        updateOLED();
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }
