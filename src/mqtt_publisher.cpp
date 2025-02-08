@@ -1,7 +1,7 @@
 #include "include/mqtt_client.h"
 #include "include/mqtt_publisher.h"
 #include "include/dht_sensor.h"
-#include "include/bmp180_sensor.h"
+#include "include/bmp390_sensor.h"
 #include <Arduino.h>
 
 // External declarations for MQTT client and timing

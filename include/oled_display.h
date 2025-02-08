@@ -5,7 +5,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "include/dht_sensor.h"
-#include "include/bmp180_sensor.h"
+#include "include/bmp390_sensor.h"
 #include "include/mqtt_publisher.h"
 #include "include/time_manager.h"
 

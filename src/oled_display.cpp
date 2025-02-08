@@ -1,7 +1,7 @@
 #include "include/oled_display.h"
 #include "include/time_manager.h"
 #include "include/dht_sensor.h"
-#include "include/bmp180_sensor.h"
+#include "include/bmp390_sensor.h"
 
 #define BOOT_BUTTON_PIN 0  // ESP32 Boot Button (GPIO 0)
 

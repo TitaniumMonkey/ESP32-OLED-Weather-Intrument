@@ -1,4 +1,4 @@
-# ESP32 Weather Station with FreeRTOS, DHT11, BMP180 & OLED Display
+# ESP32 Weather Station with FreeRTOS, DHT11, BMP390 & OLED Display
 
 <p align="center">
   <img src="https://i.imgur.com/6BIa1wq.jpeg" alt="ESP32 Weather Station" width="512" height="512">
@@ -7,7 +7,7 @@
 
 ## Overview
 
-This project is an **ESP32-based Weather Station** that collects temperature, humidity, pressure, and altitude data using **DHT11 and BMP180 sensors**. Data is displayed on an **OLED screen** and sent via **MQTT** to a home automation system like **Home Assistant**. The system is designed using **FreeRTOS tasks** for modularity and efficiency.
+This project is an **ESP32-based Weather Station** that collects temperature, humidity, pressure, and altitude data using **DHT11 and BMP390 sensors**. Data is displayed on an **OLED screen** and sent via **MQTT** to a home automation system like **Home Assistant**. The system is designed using **FreeRTOS tasks** for modularity and efficiency.
 
 ## Features
 
@@ -30,7 +30,7 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
 ├── 📺 include                  # Header files for modular components
 │   ├── 📄 wifi_manager.h       # Wi-Fi connection handling
 │   ├── 📄 dht_sensor.h         # DHT11 sensor interface
-│   ├── 📄 bmp180_sensor.h      # BMP180 sensor interface with calibration
+│   ├── 📄 bmp390_sensor.h      # BMP390 sensor interface with calibration
 │   ├── 📄 mqtt_client.h        # MQTT connection management
 │   ├── 📄 mqtt_publisher.h     # MQTT message publishing
 │   ├── 📄 oled_display.h       # OLED display control
@@ -39,7 +39,7 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
 └── 📺 src                      # Source files implementing component logic
     ├── 📄 wifi_manager.cpp     # Handles Wi-Fi connection logic
     ├── 📄 dht_sensor.cpp       # Implements DHT11 sensor reading
-    ├── 📄 bmp180_sensor.cpp    # Implements BMP180 sensor reading with smoothing
+    ├── 📄 bmp390_sensor.cpp    # Implements BMP390sensor reading with smoothing
     ├── 📄 mqtt_client.cpp      # Manages MQTT connections and subscriptions
     ├── 📄 mqtt_publisher.cpp   # Formats and sends sensor data via MQTT
     ├── 📄 oled_display.cpp     # Updates OLED display and manages auto shutoff
@@ -55,7 +55,7 @@ Install the following libraries in **Arduino IDE**:
 3. **DHT sensor library** (by Adafruit)
 4. **Adafruit GFX Library** (by Adafruit)
 5. **Adafruit SSD1306** (by Adafruit)
-6. **Adafruit BMP085 Library** (by Adafruit)
+6. **Adafruit BMP3XX Library** (by Adafruit)
 
 ### Installing Libraries
 1. Open **Arduino IDE**
@@ -87,7 +87,7 @@ Install the following libraries in **Arduino IDE**:
 | GND          | GND       |
 | GPIO4 (D4)   | DATA      |
 
-|  ESP32 Pin   | BMP180 Pin |
+|  ESP32 Pin   | BMP390 Pin |
 |--------------|-----------|
 | 3.3V         | VCC       |
 | GND          | GND       |

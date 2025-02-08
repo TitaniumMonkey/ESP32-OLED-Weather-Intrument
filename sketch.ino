@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "include/wifi_manager.h"
 #include "include/dht_sensor.h"
-#include "include/bmp180_sensor.h"
+#include "include/bmp390_sensor.h"
 #include "include/mqtt_client.h"
 #include "include/mqtt_publisher.h"
 #include "include/oled_display.h"
@@ -41,11 +41,11 @@ void dhtTask(void *pvParameters) {
 }
 
 /**
- * BMP180 Sensor Task: Reads pressure, temperature, and altitude
+ * BMP390 Sensor Task: Reads temperature, pressure and altitude
  */
 void bmpTask(void *pvParameters) {
     while (1) {
-        readBMP180Sensor();
+        readBMP390Sensor();
         vTaskDelay(pdMS_TO_TICKS(5000)); // Read every 5 seconds
     }
 }
@@ -134,7 +134,7 @@ void setup() {
     setupWiFi();
     setupTime();
     setupDHTSensor();
-    setupBMP180Sensor();
+    setupBMP390Sensor();
     setupMQTT();
     setupOLED();
 
