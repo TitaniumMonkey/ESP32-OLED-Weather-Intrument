@@ -46,24 +46,117 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
     ├── 📄 time_manager.cpp     # Synchronizes system time via NTP
 ```
 
-## Secrets Configuration (`secrets.h`)
 
-Edit the `secrets.h` file in the `include` directory with your SSID/Pass & MQTT IP/User/Pass:
+## Required Libraries
+Install the following libraries in **Arduino IDE**:
+
+1. **WiFi** (Built-in for ESP32)
+2. **PubSubClient** (by Nick O'Leary)
+3. **DHT sensor library** (by Adafruit)
+4. **Adafruit GFX Library** (by Adafruit)
+5. **Adafruit SSD1306** (by Adafruit)
+6. **Adafruit BMP085 Library** (by Adafruit)
+
+### Installing Libraries
+1. Open **Arduino IDE**
+2. Go to **Sketch → Include Library → Manage Libraries**
+3. Search for and install the required libraries
+
+## Board Setup in Arduino IDE
+1. **Install ESP32 Board Support**
+   - Open **Arduino IDE**
+   - Go to **File → Preferences**
+   - In **Additional Board Manager URLs**, add:
+     ```
+     https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+     ```
+   - Go to **Tools → Board → Boards Manager**
+   - Search for **ESP32** and install the latest version
+
+2. **Select the Board**
+   - Go to **Tools → Board**
+   - Select **ESP32 Dev Module**
+   - Set Upload Speed: **115200**
+   - Flash Mode: **QIO**
+   - Partition Scheme: **Default**
+
+## Wiring Diagram
+|   ESP32 Pin  | DHT11 Pin |
+|--------------|-----------|
+| 3.3V         | VCC       |
+| GND          | GND       |
+| GPIO4 (D4)   | DATA      |
+
+|  ESP32 Pin   | BMP180 Pin |
+|--------------|-----------|
+| 3.3V         | VCC       |
+| GND          | GND       |
+| GPIO21 (D21) | SDA       |
+| GPIO22 (D22) | SCL       |
+ 
+## Configuration
+
+### Setting Your Timezone
+This project uses **NTP (Network Time Protocol)** to sync the correct time. You can adjust the timezone and **enable/disable daylight saving time (DST)** in the following section of the code:
+
+```cpp
+const char* ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = -8 * 3600; // Pacific Standard Time (PST)
+const int daylightOffset_sec = 0;     // No DST (Set to 3600 for 1 hour DST adjustment)
+```
+
+#### Finding Your Timezone
+To get your **GMT offset**, you can check:
+- [Time Zone List](https://en.wikipedia.org/wiki/List_of_UTC_time_offsets)
+- Running this Linux command:
+  ```bash
+  timedatectl
+  ```
+  Look for `Time zone` and `UTC offset`.
+
+#### Adjusting for DST
+- If your region **uses DST**, change `daylightOffset_sec` to `3600` (1 hour forward).
+- If your region **does not use DST**, keep it as `0`.
+
+Before uploading the code, create a `secrets.h` file next to your `.ino` file with your **Wi-Fi and MQTT credentials**:
 
 ```cpp
 #ifndef SECRETS_H
 #define SECRETS_H
 
-#define WIFI_SSID "your_wifi_ssid"
-#define WIFI_PASSWORD "your_wifi_password"
-#define MQTT_SERVER "your_mqtt_broker_ip"
-#define MQTT_USER "your_mqtt_username"
-#define MQTT_PASS "your_mqtt_password"
+#define WIFI_SSID "Your_WiFi_SSID"
+#define WIFI_PASSWORD "Your_WiFi_Password"
 
-#endif
+#define MQTT_SERVER "Your_MQTT_Broker_IP"
+#define MQTT_USER "Your_MQTT_Username"
+#define MQTT_PASS "Your_MQTT_Password"
+
+#endif // SECRETS_H
 ```
 
-**Do not commit `secrets.h` to version control!**
+## Uploading the Code
+1. **Connect the ESP32 to your PC via USB**
+2. Open the **Arduino IDE**
+3. Select **ESP32 Dev Module** under **Tools → Board**
+4. Open **Tools → Port** and select the correct COM port
+5. Click the **Upload** button
+6. Open the **Serial Monitor** (baud rate: `19200`) to check the logs
+
+## MQTT Data Format
+The ESP32 publishes the following message to the MQTT topic:
+```plaintext
+01/28/25 10:43PM PST | Temp: 18.2 C / 64.8 F | Humidity: 35.0 % | Alt: 72.1 m / 236 ft | Pressure: 999 hPa
+```
+
+## Expected OLED Display Layout
+```
+Temp: 22.5 C / 72.5 F
+Humidity: 37.0%
+Alt: 72.1 m / 236 ft
+Pressure: 999 hPa
+
+02/01/25 05:33PM PST
+```
 
 ## Troubleshooting
 
@@ -73,7 +166,7 @@ Before troubleshooting specific issues, connect your **ESP32 to a PC via USB** a
 
 1. **Open Arduino IDE** → Select the correct **board & port**.  
 2. **Go to `Tools` → `Serial Monitor`**.  
-3. **Set baud rate** to `115200` (or the project’s configured baud rate).  
+3. **Set baud rate** to `19200` (or the project’s configured baud rate).  
 4. Observe the output to check:
    - **Wi-Fi connection status**  
    - **MQTT broker connection logs**  
@@ -95,27 +188,6 @@ If the ESP32 fails to connect to Wi-Fi or MQTT, the error messages will indicate
 
 - Ensure ESP32 is **connected to Wi-Fi**  
 - Check if MQTT broker is **online and accessible**  
-
----
-
-### **3️⃣ Time is Incorrect?**
-
-- Adjust the **timezone settings** in `time_manager.cpp`:
-  ```cpp
-  const long gmtOffset_sec = -8 * 3600;  // Update for your timezone
-  const int daylightOffset_sec = 3600;   // Set to 0 if no daylight savings
-  configTime(gmtOffset_sec, daylightOffset_sec, "pool.ntp.org");
-  ```
-- Ensure ESP32 has an **active internet connection** (NTP sync requires Wi-Fi).  
-- Open **Arduino IDE → Tools → Serial Monitor** to check if time synchronization is failing.  
-- Restart ESP32 after making changes to apply the new time settings.  
-
----
-
-### **4️⃣ OLED Button Delay**
-
-- The button **does work**, but the OLED updates **only every 3 seconds**
-- If you press the button, **wait up to 3 seconds** before the screen reacts
 
 ---
 
