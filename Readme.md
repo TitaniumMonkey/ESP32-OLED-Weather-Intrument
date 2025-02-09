@@ -14,7 +14,7 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
 ✅ **Temperature, Humidity, Pressure, and Altitude Monitoring**\
 ✅ **OLED Display with Auto Shutoff (5 min timeout)**\
 ✅ **Boot Button (GPIO 0) Toggles OLED ON/OFF**\
-✅ **MQTT Publishing Every Minute**\
+✅ **MQTT Publishing Every Five Minutes**\
 ✅ **Home Assistant Auto-Discovery (Only on Boot)**\
 ✅ **Persistent MQTT Connection (Prevents Unnecessary Reconnection)**\
 ✅ **Time Synchronization via NTP (Adjustable Timezone)**\
