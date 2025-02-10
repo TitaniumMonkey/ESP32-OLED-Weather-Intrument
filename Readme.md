@@ -1,7 +1,7 @@
 # ESP32 Weather Station with FreeRTOS, DHT11, BMP390 & OLED Display
 
 <p align="center">
-  <img src="https://i.imgur.com/xkrLPfS.jpeg" alt="ESP32 Weather Station" width="658" height="506">
+  <img src="https://i.imgur.com/xkrLPfS.jpeg" alt="ESP32 Weather Station">
   <img src="https://i.imgur.com/H0yqByr.png" alt="ESP32 Sensor Close-up" width="658" height="506">
 </p>
 
