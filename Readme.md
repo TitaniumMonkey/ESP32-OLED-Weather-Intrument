@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://i.imgur.com/6BIa1wq.jpeg" alt="ESP32 Weather Station" width="512" height="512">
-  <img src="https://i.imgur.com/H0yqByr.png" alt="ESP32 Sensor Close-up" width="658" height="506">
+  <img src="https://i.imgur.com/xkrLPfS.jpeg" alt="ESP32 Sensor Close-up" width="658" height="506">
 </p>
 
 ## Overview
