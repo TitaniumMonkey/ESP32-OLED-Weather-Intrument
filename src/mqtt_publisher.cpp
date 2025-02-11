@@ -9,74 +9,104 @@ extern PubSubClient client;           // MQTT client instance
 extern unsigned long mqttSentDisplayTime;  // Timestamp for last successful MQTT data send
 
 // MQTT topic definitions for sensor state
-const char* topic_state_temp = "homeassistant/sensor/esp32_temperature/state";
-const char* topic_state_humidity = "homeassistant/sensor/esp32_humidity/state";
-const char* topic_state_altitude = "homeassistant/sensor/esp32_altitude/state";
-const char* topic_state_pressure = "homeassistant/sensor/esp32_pressure/state";
+const char* topic_state_temp = "homeassistant/sensor/bmp390_temperature/state";
+const char* topic_state_humidity = "homeassistant/sensor/bmp390_humidity/state";
+const char* topic_state_altitude = "homeassistant/sensor/bmp390_altitude/state";
+const char* topic_state_pressure = "homeassistant/sensor/bmp390_pressure/state";
 
 // MQTT topic definitions for sensor discovery
-const char* topic_discovery_temp = "homeassistant/sensor/esp32_temperature/config";
-const char* topic_discovery_humidity = "homeassistant/sensor/esp32_humidity/config";
-const char* topic_discovery_altitude = "homeassistant/sensor/esp32_altitude/config";
-const char* topic_discovery_pressure = "homeassistant/sensor/esp32_pressure/config";
+const char* topic_discovery_temp = "homeassistant/sensor/bmp390_temperature/config";
+const char* topic_discovery_humidity = "homeassistant/sensor/bmp390_humidity/config";
+const char* topic_discovery_altitude = "homeassistant/sensor/bmp390_altitude/config";
+const char* topic_discovery_pressure = "homeassistant/sensor/bmp390_pressure/config";
 
 /**
  * Publishes discovery messages for all sensors to Home Assistant
  * This function creates and sends MQTT discovery payloads for temperature,
  * humidity, pressure, and altitude sensors
+ * 
+ * @return bool Returns true if all discovery messages were sent successfully
  */
-void publishDiscoveryMessages() {
-    char discoveryPayload[256];  // Buffer for discovery payload
+bool publishDiscoveryMessages() {
+    if (!client.connected()) {
+        Serial.println("⚠️ Cannot send discovery messages - MQTT not connected!");
+        return false;
+    }
+
+    char discoveryPayload[512];
+    bool success = true;
 
     // Temperature sensor discovery
     snprintf(discoveryPayload, sizeof(discoveryPayload),
-        "{"
-        "\"name\": \"ESP32 Temperature\","
-        "\"unique_id\": \"esp32_temperature\","
-        "\"state_topic\": \"%s\","
-        "\"unit_of_measurement\": \"°F\","
-        "\"device_class\": \"temperature\","
-        "\"value_template\": \"{{ value_json.temperature }}\""
-        "}", topic_state_temp);
-    client.publish(topic_discovery_temp, discoveryPayload, true);
+        "{\"name\":\"BMP390 Temperature\","
+        "\"state_topic\":\"homeassistant/sensor/bmp390_temperature/state\","
+        "\"unique_id\":\"bmp390_temperature\","
+        "\"unit_of_measurement\":\"°F\","
+        "\"device_class\":\"temperature\","
+        "\"value_template\":\"{{ value_json.temperature }}\"}");
+    
+    Serial.print("Publishing temperature discovery (length: ");
+    Serial.print(strlen(discoveryPayload));
+    Serial.println(" bytes)");
+    
+    success &= client.publish("homeassistant/sensor/bmp390_temperature/config", discoveryPayload, true);
+    delay(200);
 
     // Humidity sensor discovery
     snprintf(discoveryPayload, sizeof(discoveryPayload),
-        "{"
-        "\"name\": \"ESP32 Humidity\","
-        "\"unique_id\": \"esp32_humidity\","
-        "\"state_topic\": \"%s\","
-        "\"unit_of_measurement\": \"%%\","
-        "\"device_class\": \"humidity\","
-        "\"value_template\": \"{{ value_json.humidity }}\""
-        "}", topic_state_humidity);
-    client.publish(topic_discovery_humidity, discoveryPayload, true);
+        "{\"name\":\"BMP390 Humidity\","
+        "\"state_topic\":\"homeassistant/sensor/bmp390_humidity/state\","
+        "\"unique_id\":\"bmp390_humidity\","
+        "\"unit_of_measurement\":\"%\","
+        "\"device_class\":\"humidity\","
+        "\"value_template\":\"{{ value_json.humidity }}\"}");
+    
+    Serial.print("Publishing humidity discovery (length: ");
+    Serial.print(strlen(discoveryPayload));
+    Serial.println(" bytes)");
+    
+    success &= client.publish("homeassistant/sensor/bmp390_humidity/config", discoveryPayload, true);
+    delay(200);
 
     // Pressure sensor discovery
     snprintf(discoveryPayload, sizeof(discoveryPayload),
-        "{"
-        "\"name\": \"ESP32 Pressure\","
-        "\"unique_id\": \"esp32_pressure\","
-        "\"state_topic\": \"%s\","
-        "\"unit_of_measurement\": \"hPa\","
-        "\"device_class\": \"pressure\","
-        "\"value_template\": \"{{ value_json.pressure }}\""
-        "}", topic_state_pressure);
-    client.publish(topic_discovery_pressure, discoveryPayload, true);
+        "{\"name\":\"BMP390 Pressure\","
+        "\"state_topic\":\"homeassistant/sensor/bmp390_pressure/state\","
+        "\"unique_id\":\"bmp390_pressure\","
+        "\"unit_of_measurement\":\"hPa\","
+        "\"device_class\":\"pressure\","
+        "\"value_template\":\"{{ value_json.pressure }}\"}");
+    
+    Serial.print("Publishing pressure discovery (length: ");
+    Serial.print(strlen(discoveryPayload));
+    Serial.println(" bytes)");
+    
+    success &= client.publish("homeassistant/sensor/bmp390_pressure/config", discoveryPayload, true);
+    delay(200);
 
     // Altitude sensor discovery
     snprintf(discoveryPayload, sizeof(discoveryPayload),
-        "{"
-        "\"name\": \"ESP32 Altitude\","
-        "\"unique_id\": \"esp32_altitude\","
-        "\"state_topic\": \"%s\","
-        "\"unit_of_measurement\": \"ft\","
-        "\"icon\": \"mdi:altimeter\","
-        "\"value_template\": \"{{ value_json.altitude }}\""
-        "}", topic_state_altitude);
-    client.publish(topic_discovery_altitude, discoveryPayload, true);
+        "{\"name\":\"BMP390 Altitude\","
+        "\"state_topic\":\"homeassistant/sensor/bmp390_altitude/state\","
+        "\"unique_id\":\"bmp390_altitude\","
+        "\"unit_of_measurement\":\"ft\","
+        "\"icon\":\"mdi:altimeter\","
+        "\"value_template\":\"{{ value_json.altitude }}\"}");
+    
+    Serial.print("Publishing altitude discovery (length: ");
+    Serial.print(strlen(discoveryPayload));
+    Serial.println(" bytes)");
+    
+    success &= client.publish("homeassistant/sensor/bmp390_altitude/config", discoveryPayload, true);
 
-    Serial.println("✅ MQTT Discovery Sent for 4 Sensors!");
+    if (success) {
+        Serial.println("✅ MQTT Discovery Sent for BMP390 Sensors!");
+    } else {
+        Serial.println("⚠️ Failed to send some discovery messages!");
+        Serial.printf("MQTT State: %d\n", client.state());
+    }
+    
+    return success;
 }
 
 /**
