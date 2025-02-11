@@ -56,6 +56,7 @@ void bmpTask(void *pvParameters) {
 void mqttTask(void *pvParameters) {
     setupMQTT();  // Initial setup here
     int reconnectAttempts = 0;
+    static bool discoveryPublished = false;  // Track if discovery has been sent
     
     // Delay for 1 minute to allow sensors to stabilize before first publish
     vTaskDelay(pdMS_TO_TICKS(60000)); 
@@ -67,28 +68,34 @@ void mqttTask(void *pvParameters) {
                 setupMQTT();  // Attempt to reconnect immediately
                 reconnectAttempts++;
                 if (!client.connected()) {
-                    // No output here, just increment the attempt counter
-                    vTaskDelay(pdMS_TO_TICKS(1666)); // Wait 1.666 seconds (5/3 seconds) between attempts
+                    vTaskDelay(pdMS_TO_TICKS(1666));
                 }
             }
 
-            // If after 3 attempts it's still not connected, print an error
             if (!client.connected()) {
                 Serial.println("⚠️ MQTT Reconnection Failed after 3 attempts! Retrying in 5 seconds...");
-                reconnectAttempts = 0;  // Reset the counter
+                reconnectAttempts = 0;
                 vTaskDelay(pdMS_TO_TICKS(5000));
             } else {
-                reconnectAttempts = 0;  // Reset the counter if connected
+                reconnectAttempts = 0;
             }
         }
 
         if (client.connected()) {
+            // Send discovery message before first publish if not already sent
+            if (!discoveryPublished) {
+                Serial.println("Sending MQTT Discovery messages...");
+                vTaskDelay(pdMS_TO_TICKS(1000));  // Wait a second for connection stability
+                if (publishDiscoveryMessages()) {
+                    discoveryPublished = true;
+                    Serial.println("✅ MQTT Discovery messages sent successfully!");
+                    vTaskDelay(pdMS_TO_TICKS(1000));  // Wait another second before first publish
+                }
+            }
+
             publishSensorData();
-            // Add the success message here
             Serial.println("📡 MQTT Sensor Data Published!");
         } else {
-            // This else block should not be reached if the above logic is correct
-            // But included for completeness
             vTaskDelay(pdMS_TO_TICKS(5000));
             continue;
         }
@@ -129,7 +136,7 @@ void serialOutputTask(void *pvParameters) {
 void oledTask(void *pvParameters);
 
 void setup() {
-    Serial.begin(19200);
+    Serial.begin(115200);
     
     setupWiFi();
     setupTime();
