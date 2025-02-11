@@ -12,12 +12,12 @@ This project is an **ESP32-based Weather Station** that collects temperature, hu
 ## Available Branches
 This project has **4 branches**, each with a different setup:
 
-- **main** → Basic ESP32 Weather Station setup with **DHT11 + OLED + MQTT**
+- **main** → Most advanced stable version of **bmp390+DHT11-Refactored-w/ESPTasks**
 - **bmp180** → Adds **BMP180 barometric pressure sensor** support
 - **bmp180+DHT11** → Combines **DHT11 (temperature & humidity) + BMP180 (pressure & altitude)**
-- **bmp180+DHT11-Refactored-w/ESPTasks** → **Most advanced version** with **FreeRTOS task management**, modularized code, and all features
-
-🔹 **The latest and most feature-rich branch is `bmp180+DHT11-Refactored-w/ESPTasks`.** New features and sensor integrations will be added as new branches.
+- **bmp180+DHT11-Refactored-w/ESPTasks** → Refactored with **FreeRTOS task management**, modularized code, and all features
+- **bmp390+DHT11-Refactored-w/ESPTasks** → **Most advanced version** with **FreeRTOS task management**, modularized code, and all features
+🔹 **The latest and most feature-rich branch is `main`.** New features and sensor integrations will be added as new branches.
 
 ## Future Plans
 1. **Non-OLED Battery-Powered Version** → Modify for **low-power ESP32** setup without an OLED.
