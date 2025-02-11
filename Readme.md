@@ -1,7 +1,13 @@
-# ESP32 Weather Station with OLED Display & MQTT
+# ESP32 Weather Station with FreeRTOS, DHT11, BMP390 & OLED Display
+
+<p align="center">
+  <img src="https://i.imgur.com/xkrLPfS.jpeg" alt="ESP32 Weather Station">
+  <img src="https://i.imgur.com/H0yqByr.png" alt="ESP32 Sensor Close-up" width="658" height="506">
+</p>
 
 ## Overview
-This project uses an **ESP32**, a **DHT11 temperature & humidity sensor**, and an **SSD1306 OLED display** to collect environmental data and send it to an **MQTT broker**. The data is displayed on the OLED screen and published to an MQTT topic every **5 minutes**.
+
+This project is an **ESP32-based Weather Station** that collects temperature, humidity, pressure, and altitude data using **DHT11 and BMP390 sensors**. Data is displayed on an **OLED screen** and sent via **MQTT** to a home automation system like **Home Assistant**. The system is designed using **FreeRTOS tasks** for modularity and efficiency.
 
 ## Available Branches
 This project has **4 branches**, each with a different setup:
@@ -19,21 +25,42 @@ This project has **4 branches**, each with a different setup:
 3. **Additional Sensors** → Support for **BME280, BME680**, and other environmental sensors.
 
 ## Features
-- Reads temperature & humidity from a **DHT11 sensor**
-- Displays real-time data on a **0.96-inch SSD1306 OLED**
-- Sends data to an **MQTT broker** every 5 minutes
-- Displays a confirmation message when MQTT data is sent
-- Uses **Wi-Fi** to connect to the network and syncs time via **NTP**
-- **Flips the display** to match the ESP32 OLED module's default layout
-- Allows **manual OLED toggling** using the ESP32 **built-in button**
 
-## Components Used
-| Component             | Description                   |
-|----------------------|-----------------------------|
-| ESP32 Board         | Wi-Fi-enabled microcontroller |
-| DHT11 Sensor       | Measures temperature & humidity |
-| SSD1306 OLED Display | 0.96-inch I2C OLED screen  |
-| MQTT Broker (e.g., Mosquitto) | Receives and processes sensor data |
+✅ **Temperature, Humidity, Pressure, and Altitude Monitoring**\
+✅ **OLED Display with Auto Shutoff (5 min timeout)**\
+✅ **Boot Button (GPIO 0) Toggles OLED ON/OFF**\
+✅ **MQTT Publishing Every Five Minutes**\
+✅ **Home Assistant Auto-Discovery (Only on Boot)**\
+✅ **Persistent MQTT Connection (Prevents Unnecessary Reconnection)**\
+✅ **Time Synchronization via NTP (Adjustable Timezone)**\
+✅ **FreeRTOS for Efficient Task Management**
+
+## Project Structure
+
+```
+📺 ESP32_Weather_Station
+├── 📄 sketch.ino               # Main entry point, initializes FreeRTOS tasks
+├── 📄 Readme.md                # Project documentation
+├── 📄 LICENSE                  # License file
+├── 📺 include                  # Header files for modular components
+│   ├── 📄 wifi_manager.h       # Wi-Fi connection handling
+│   ├── 📄 dht_sensor.h         # DHT11 sensor interface
+│   ├── 📄 bmp390_sensor.h      # BMP390 sensor interface with calibration
+│   ├── 📄 mqtt_client.h        # MQTT connection management
+│   ├── 📄 mqtt_publisher.h     # MQTT message publishing
+│   ├── 📄 oled_display.h       # OLED display control
+│   ├── 📄 time_manager.h       # NTP time synchronization
+│   ├── 📄 secrets.h            # Wi-Fi & MQTT credentials (template included but must be updated)
+└── 📺 src                      # Source files implementing component logic
+    ├── 📄 wifi_manager.cpp     # Handles Wi-Fi connection logic
+    ├── 📄 dht_sensor.cpp       # Implements DHT11 sensor reading
+    ├── 📄 bmp390_sensor.cpp    # Implements BMP390sensor reading with smoothing
+    ├── 📄 mqtt_client.cpp      # Manages MQTT connections and subscriptions
+    ├── 📄 mqtt_publisher.cpp   # Formats and sends sensor data via MQTT
+    ├── 📄 oled_display.cpp     # Updates OLED display and manages auto shutoff
+    ├── 📄 time_manager.cpp     # Synchronizes system time via NTP
+```
+
 
 ## Required Libraries
 Install the following libraries in **Arduino IDE**:
@@ -43,6 +70,7 @@ Install the following libraries in **Arduino IDE**:
 3. **DHT sensor library** (by Adafruit)
 4. **Adafruit GFX Library** (by Adafruit)
 5. **Adafruit SSD1306** (by Adafruit)
+6. **Adafruit BMP3XX Library** (by Adafruit)
 
 ### Installing Libraries
 1. Open **Arduino IDE**
@@ -68,12 +96,19 @@ Install the following libraries in **Arduino IDE**:
    - Partition Scheme: **Default**
 
 ## Wiring Diagram
-| ESP32 Pin | DHT11 Pin |
-|-----------|----------|
-| 3.3V      | VCC      |
-| GND       | GND      |
-| GPIO15    | DATA     |
+|   ESP32 Pin  | DHT11 Pin |
+|--------------|-----------|
+| 3.3V         | VCC       |
+| GND          | GND       |
+| GPIO4 (D4)   | DATA      |
 
+|  ESP32 Pin   | BMP390 Pin |
+|--------------|-----------|
+| 3.3V         | VCC       |
+| GND          | GND       |
+| GPIO21 (D21) | SDA       |
+| GPIO22 (D22) | SCL       |
+ 
 ## Configuration
 
 ### Setting Your Timezone
@@ -125,36 +160,46 @@ Before uploading the code, create a `secrets.h` file next to your `.ino` file wi
 ## MQTT Data Format
 The ESP32 publishes the following message to the MQTT topic:
 ```plaintext
-01/28/25 10:43PM PST | Humidity: 35.0 % | Temperature: 18.2 °C | 64.8 °F
+01/28/25 10:43PM PST | Temp: 18.2 C / 64.8 F | Humidity: 35.0 % | Alt: 72.1 m / 236 ft | Pressure: 999 hPa
 ```
 
 ## Expected OLED Display Layout
 ```
-Humidity:
-  35.0%
-Temperature:
-  18.2 C
-  64.8 F
+Temp: 22.5 C / 72.5 F
+Humidity: 37.0%
+Alt: 72.1 m / 236 ft
+Pressure: 999 hPa
 
-01/28/25 10:43PM PST
+02/01/25 05:33PM PST
 ```
 
 ## Troubleshooting
-### 1. **OLED Display Not Working**
-- Ensure **SDA (GPIO21) & SCL (GPIO22)** are correctly connected.
-- Check **I2C address** (default is `0x3C`).
-- Try scanning I2C devices using an I2C scanner sketch.
 
-### 2. **ESP32 Not Connecting to Wi-Fi**
-- Double-check **SSID and Password** in `secrets.h`.
-- Ensure your **Wi-Fi network is 2.4 GHz** (ESP32 doesn't support 5 GHz).
+### **1️⃣ Basic Debugging & Serial Monitor**
 
-### 3. **MQTT Not Connecting**
-- Verify the **MQTT broker IP and credentials** in `secrets.h`.
-- Ensure the broker is running and accessible.
-- Try disabling MQTT authentication temporarily.
+Before troubleshooting specific issues, connect your **ESP32 to a PC via USB** and open the **Arduino IDE Serial Monitor** to check real-time logs:
+
+1. **Open Arduino IDE** → Select the correct **board & port**.  
+2. **Go to `Tools` → `Serial Monitor`**.  
+3. **Set baud rate** to `19200` (or the project’s configured baud rate).  
+4. Observe the output to check:
+   - **Wi-Fi connection status**  
+   - **MQTT broker connection logs**  
+   - **Sensor readings & system messages**  
+
+If the ESP32 fails to connect to Wi-Fi or MQTT, the error messages will indicate where the issue is.
 
 ---
-### 🚀 Enjoy your ESP32 Weather Station!
-Let me know if you have any issues. Feel free to contribute and improve this project! 😊
 
+### **2️⃣ MQTT Messages Not Showing?**
+
+- Run the following command to subscribe to **all MQTT messages** and check if data is being published:
+  ```sh
+  mosquitto_sub -h <MQTT_BROKER_IP_OR_HOST> -u <MQTT_USER> -P <MQTT_PASS> -t "#" -v
+  ```
+  - Replace `<MQTT_BROKER_IP_OR_HOST>` with your **MQTT broker’s IP address or hostname**  
+  - Replace `<MQTT_USER>` and `<MQTT_PASS>` with your **MQTT credentials**  
+  - **MQTT should not be left in unauthenticated mode** for security reasons.  
+
+
+🚀 **Your ESP32 Weather Station is now fully functional!** Enjoy real-time environmental data with MQTT & OLED integration! 🚀
