@@ -45,10 +45,6 @@ bool publishDiscoveryMessages() {
         "\"device_class\":\"temperature\","
         "\"value_template\":\"{{ value_json.temperature }}\"}");
     
-    Serial.print("Publishing temperature discovery (length: ");
-    Serial.print(strlen(discoveryPayload));
-    Serial.println(" bytes)");
-    
     success &= client.publish("homeassistant/sensor/bmp390_temperature/config", discoveryPayload, true);
     delay(200);
 
@@ -60,10 +56,6 @@ bool publishDiscoveryMessages() {
         "\"unit_of_measurement\":\"%\","
         "\"device_class\":\"humidity\","
         "\"value_template\":\"{{ value_json.humidity }}\"}");
-    
-    Serial.print("Publishing humidity discovery (length: ");
-    Serial.print(strlen(discoveryPayload));
-    Serial.println(" bytes)");
     
     success &= client.publish("homeassistant/sensor/bmp390_humidity/config", discoveryPayload, true);
     delay(200);
@@ -77,10 +69,6 @@ bool publishDiscoveryMessages() {
         "\"device_class\":\"pressure\","
         "\"value_template\":\"{{ value_json.pressure }}\"}");
     
-    Serial.print("Publishing pressure discovery (length: ");
-    Serial.print(strlen(discoveryPayload));
-    Serial.println(" bytes)");
-    
     success &= client.publish("homeassistant/sensor/bmp390_pressure/config", discoveryPayload, true);
     delay(200);
 
@@ -93,17 +81,12 @@ bool publishDiscoveryMessages() {
         "\"icon\":\"mdi:altimeter\","
         "\"value_template\":\"{{ value_json.altitude }}\"}");
     
-    Serial.print("Publishing altitude discovery (length: ");
-    Serial.print(strlen(discoveryPayload));
-    Serial.println(" bytes)");
-    
     success &= client.publish("homeassistant/sensor/bmp390_altitude/config", discoveryPayload, true);
 
     if (success) {
-        Serial.println("✅ MQTT Discovery Sent for BMP390 Sensors!");
+        Serial.println("✅ MQTT Discovery messages sent successfully!");
     } else {
-        Serial.println("⚠️ Failed to send some discovery messages!");
-        Serial.printf("MQTT State: %d\n", client.state());
+        Serial.println("⚠️ Failed to send discovery messages!");
     }
     
     return success;
