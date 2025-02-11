@@ -86,11 +86,7 @@ void mqttTask(void *pvParameters) {
             if (!discoveryPublished) {
                 Serial.println("Sending MQTT Discovery messages...");
                 vTaskDelay(pdMS_TO_TICKS(1000));  // Wait a second for connection stability
-                if (publishDiscoveryMessages()) {
-                    discoveryPublished = true;
-                    Serial.println("✅ MQTT Discovery messages sent successfully!");
-                    vTaskDelay(pdMS_TO_TICKS(1000));  // Wait another second before first publish
-                }
+                discoveryPublished = publishDiscoveryMessages();
             }
 
             publishSensorData();
