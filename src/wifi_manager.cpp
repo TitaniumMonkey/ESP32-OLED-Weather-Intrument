@@ -8,20 +8,20 @@ void setupWiFi() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     int retryCount = 0;
-    // Attempt connection with timeout (20 retries, 500ms each)
-    while (WiFi.status() != WL_CONNECTED && retryCount < 20) {
+    while (WiFi.status() != WL_CONNECTED && retryCount < 30) {  // Increased timeout
         delay(500);
         Serial.print(".");
         retryCount++;
     }
 
-    // Check connection status
     if (WiFi.status() == WL_CONNECTED) {
         Serial.println("\nWi-Fi Connected!");
         Serial.print("IP Address: ");
         Serial.println(WiFi.localIP());
+        delay(1000);  // Give the connection a moment to stabilize
     } else {
         Serial.println("\nWi-Fi Connection Failed!");
+        ESP.restart();  // Restart if we can't connect to WiFi
     }
 }
 
