@@ -2,6 +2,8 @@
 #include "include/mqtt_client.h"
 #include "include/mqtt_publisher.h"
 #include <Arduino.h>
+#include "include/secrets.h"
+#include <PubSubClient.h>
 
 // Global WiFi and MQTT client instances
 WiFiClient espClient;
@@ -13,33 +15,18 @@ PubSubClient client(espClient);
  * and handles discovery message publication on first connection
  */
 void setupMQTT() {
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-    }
-
-    static bool firstConnection = true;
     static bool firstBoot = true;
-    static bool discoverySent = false;
 
+    client.setBufferSize(512);  // Increase buffer size for larger messages
     client.setServer(MQTT_SERVER, 1883);
     
-    while (!client.connected()) {
-        if (client.connect("ESP32WeatherStation", MQTT_USER, MQTT_PASS)) {
-            if (firstConnection) {
-                firstConnection = false;
-                if (firstBoot) {
-                    Serial.println("Connected to MQTT broker!");
-                    firstBoot = false;
-                }
-
-                if (!discoverySent) {
-                    publishDiscoveryMessages();
-                    discoverySent = true;
-                }
-            }
-        } else {
-            Serial.println("⚠️ MQTT Connection Failed! Retrying in 5 seconds...");
-            delay(5000);
+    if (client.connect("ESP32WeatherStation", MQTT_USER, MQTT_PASS)) {
+        if (firstBoot) {
+            Serial.println("Connected to MQTT broker!");
+            Serial.printf("MQTT Buffer Size: %d\n", client.getBufferSize());
+            firstBoot = false;
         }
+    } else {
+        Serial.printf("⚠️ MQTT Connection Failed! Error: %d\n", client.state());
     }
 }
