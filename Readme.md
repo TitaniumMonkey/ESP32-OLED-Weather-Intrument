@@ -19,8 +19,6 @@ This project has **4 branches**, each with a different setup:
 - **bmp390+DHT11-Refactored-w/ESPTasks** → **Most advanced version** with **FreeRTOS task management**, modularized code, and all features
 🔹 **The latest and most feature-rich branch is `main`.** New features and sensor integrations will be added as new branches.
 
-🔹 **The latest and most feature-rich branch is `bmp180+DHT11-Refactored-w/ESPTasks`.** New features and sensor integrations will be added as new branches.
-
 ## Future Plans
 1. **Non-OLED Battery-Powered Version** → Modify for **low-power ESP32** setup without an OLED.
 2. **LoRa & Meshtastic Integration** → Use **LoRaWAN** or **Meshtastic** to transmit sensor data over long distances.
