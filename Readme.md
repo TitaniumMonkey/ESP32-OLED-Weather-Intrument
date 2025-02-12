@@ -61,7 +61,6 @@ This project has **4 branches**, each with a different setup:
     ├── 📄 time_manager.cpp     # Synchronizes system time via NTP
 ```
 
-
 ## Required Libraries
 Install the following libraries in **Arduino IDE**:
 
