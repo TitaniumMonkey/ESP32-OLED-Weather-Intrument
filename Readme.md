@@ -10,7 +10,7 @@
 This project is an **ESP32-based Weather Station** that collects temperature, humidity, pressure, and altitude data using **DHT11 and BMP390 sensors**. Data is displayed on an **OLED screen** and sent via **MQTT** to a home automation system like **Home Assistant**. The system is designed using **FreeRTOS tasks** for modularity and efficiency.
 
 ## Available Branches
-This project has **4 branches**, each with a different setup:
+This project has **5 branches**, each with a different setup:
 
 - **main** → Most advanced stable version of **bmp390+DHT11-Refactored-w/ESPTasks**
 - **bmp180** → Adds **BMP180 barometric pressure sensor** support
@@ -149,6 +149,11 @@ Before uploading the code, create a `secrets.h` file next to your `.ino` file wi
 #endif // SECRETS_H
 ```
 
+## Setup
+1. Copy `include/secrets.h.example` to `include/secrets.h`
+2. Update `secrets.h` with your credentials
+3. Never commit your `secrets.h` file
+
 ## Uploading the Code
 1. **Connect the ESP32 to your PC via USB**
 2. Open the **Arduino IDE**
@@ -181,7 +186,7 @@ Before troubleshooting specific issues, connect your **ESP32 to a PC via USB** a
 
 1. **Open Arduino IDE** → Select the correct **board & port**.  
 2. **Go to `Tools` → `Serial Monitor`**.  
-3. **Set baud rate** to `19200` (or the project’s configured baud rate).  
+3. **Set baud rate** to `19200` (or the project's configured baud rate).  
 4. Observe the output to check:
    - **Wi-Fi connection status**  
    - **MQTT broker connection logs**  
@@ -197,7 +202,7 @@ If the ESP32 fails to connect to Wi-Fi or MQTT, the error messages will indicate
   ```sh
   mosquitto_sub -h <MQTT_BROKER_IP_OR_HOST> -u <MQTT_USER> -P <MQTT_PASS> -t "#" -v
   ```
-  - Replace `<MQTT_BROKER_IP_OR_HOST>` with your **MQTT broker’s IP address or hostname**  
+  - Replace `<MQTT_BROKER_IP_OR_HOST>` with your **MQTT broker's IP address or hostname**  
   - Replace `<MQTT_USER>` and `<MQTT_PASS>` with your **MQTT credentials**  
   - **MQTT should not be left in unauthenticated mode** for security reasons.  
 

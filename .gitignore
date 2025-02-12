@@ -43,8 +43,8 @@ Release/
 # Project specific
 include/secrets.h
 secrets.h
+secrets.h.example
 *.env
-.env
 config.ini
 
 # Dependency directories
